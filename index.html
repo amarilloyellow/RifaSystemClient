@@ -1,481 +1,431 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sistema de Rifas</title>
-    <!-- Fonts -->
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,400,500,700&display=swap" />
-    <!-- React y Babel -->
-    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
-    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-    <!-- Material-UI -->
-    <script src="https://unpkg.com/@mui/material@5.15.20/umd/material-ui.development.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        /* Custom scrollbar for better dark mode aesthetics */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #1f2937;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #4b5563;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #6b7280;
+        }
+        /* Simple spinner animation */
+        .spinner {
+            border: 4px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top: 4px solid #ffffff;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
 </head>
-<body style="margin: 0; padding: 0;">
-    <div id="root"></div>
+<body class="bg-gray-900 text-white antialiased">
 
-    <script type="text/babel">
-        const {
-            ThemeProvider,
-            createTheme,
-            CssBaseline,
-            Container,
-            Typography,
-            Grid,
-            Card,
-            CardContent,
-            CardMedia,
-            CardActions,
-            Button,
-            CircularProgress,
-            Box,
-            AppBar,
-            Toolbar,
-            Dialog,
-            DialogTitle,
-            DialogContent,
-            DialogActions,
-            TextField,
-            Chip,
-            Snackbar,
-            Alert,
-            IconButton
-        } = MaterialUI;
+    <div id="app" class="container mx-auto p-4 md:p-8">
+        
+        <header class="text-center mb-10">
+            <h1 class="text-4xl md:text-5xl font-bold tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-cyan-500">Sistema de Rifas Moderno</h1>
+            <p class="text-gray-400 mt-2">Elige tu rifa y participa para ganar premios increíbles.</p>
+        </header>
 
-        // URLs de la API
-        const API_BASE_URL = 'https://rifa-system.vercel.app';
-        const RAFFLES_URL = `${API_BASE_URL}/rifas`;
+        <!-- Loading Indicator -->
+        <div id="loader" class="fixed inset-0 bg-gray-900 bg-opacity-80 flex justify-center items-center z-50 hidden">
+            <div class="spinner"></div>
+        </div>
+        
+        <!-- Alertas / Notificaciones -->
+        <div id="alert-banner" class="hidden fixed top-5 right-5 z-50 p-4 rounded-lg text-sm">
+            <span id="alert-message"></span>
+        </div>
 
-        // Definimos el tema oscuro para la aplicación
-        const darkTheme = createTheme({
-            palette: {
-                mode: 'dark',
-                primary: {
-                    main: '#90caf9',
-                },
-                secondary: {
-                    main: '#f48fb1',
-                },
-                background: {
-                    default: '#121212',
-                    paper: '#1e1e1e',
-                },
-            },
-            typography: {
-                fontFamily: 'Roboto, Arial, sans-serif',
-            },
-        });
 
-        function App() {
-            // --- ESTADOS ---
-            const [raffles, setRaffles] = React.useState([]);
-            const [loading, setLoading] = React.useState(true);
-            const [error, setError] = React.useState(null);
-            const [selectedRaffle, setSelectedRaffle] = React.useState(null);
-            const [tickets, setTickets] = React.useState([]);
-            const [loadingTickets, setLoadingTickets] = React.useState(false);
+        <!-- Sección 1: Selección de Rifa -->
+        <section id="raffles-section">
+            <h2 class="text-2xl font-semibold mb-6 border-l-4 border-emerald-400 pl-4">Rifas Disponibles</h2>
+            <div id="raffles-container" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                <!-- Las tarjetas de rifas se insertarán aquí dinámicamente -->
+            </div>
+        </section>
 
-            // Estado para el formulario de compra
-            const [purchaseFormOpen, setPurchaseFormOpen] = React.useState(false);
-            const [selectedTicketNumber, setSelectedTicketNumber] = React.useState(null);
-            const [formData, setFormData] = React.useState({
-                ticketHolderID: '',
-                ticketHolderName: '',
-                ticketHolderPhone: '',
-                ticketHolderEmail: '',
-                referenceCode: ''
-            });
-            const [formSubmitting, setFormSubmitting] = React.useState(false);
+        <!-- Sección 2: Vista de Tickets -->
+        <section id="tickets-section" class="hidden">
+            <button id="back-to-raffles-btn" class="mb-6 bg-gray-700 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded-lg transition-colors duration-300 flex items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clip-rule="evenodd" />
+                </svg>
+                Volver a las Rifas
+            </button>
+            <div class="bg-gray-800 p-6 rounded-lg shadow-lg">
+                <h2 id="raffle-title-display" class="text-3xl font-bold mb-2"></h2>
+                <p id="raffle-details-display" class="text-gray-400 mb-6"></p>
+                <div class="flex flex-wrap gap-4 mb-6 items-center">
+                    <span class="flex items-center gap-2"><div class="w-4 h-4 rounded-full bg-gray-600"></div> Disponibles</span>
+                    <span class="flex items-center gap-2"><div class="w-4 h-4 rounded-full bg-yellow-500"></div> En Proceso</span>
+                    <span class="flex items-center gap-2"><div class="w-4 h-4 rounded-full bg-red-600"></div> Vendidos</span>
+                </div>
+                <div id="tickets-grid" class="grid grid-cols-5 sm:grid-cols-10 md:grid-cols-12 lg:grid-cols-15 xl:grid-cols-20 gap-2">
+                    <!-- Los tickets se insertarán aquí dinámicamente -->
+                </div>
+            </div>
+        </section>
 
-            // Estado para notificaciones (Snackbar)
-            const [notification, setNotification] = React.useState({ open: false, message: '', severity: 'info' });
-
-            // --- EFECTOS ---
-            // Cargar todas las rifas al iniciar el componente
-            React.useEffect(() => {
-                const fetchRaffles = async () => {
-                    try {
-                        const response = await fetch(RAFFLES_URL);
-                        if (!response.ok) {
-                            throw new Error('Error al obtener las rifas. Código: ' + response.status);
-                        }
-                        const data = await response.json();
-                        // Filtrar solo las rifas activas
-                        setRaffles(data.filter(raffle => raffle.isActive));
-                    } catch (err) {
-                        setError(err.message);
-                        setNotification({ open: true, message: err.message, severity: 'error' });
-                    } finally {
-                        setLoading(false);
-                    }
-                };
-                fetchRaffles();
-            }, []);
-
-            // --- MANEJADORES DE EVENTOS ---
-            const handleSelectRaffle = async (raffle) => {
-                setSelectedRaffle(raffle);
-                setLoadingTickets(true);
-                setTickets([]); // Limpiar boletos anteriores
-                try {
-                    const response = await fetch(`${RAFFLES_URL}/${raffle.id}/tickets`);
-                    if (!response.ok) {
-                        throw new Error('Error al cargar los boletos de la rifa.');
-                    }
-                    const reservedTickets = await response.json();
+        <!-- Modal para el formulario de compra -->
+        <div id="purchase-modal" class="fixed inset-0 bg-black bg-opacity-70 flex justify-center items-center z-40 hidden p-4">
+            <div class="bg-gray-800 rounded-lg shadow-xl p-6 md:p-8 w-full max-w-lg relative transform transition-all scale-95 opacity-0" id="modal-content">
+                <button id="close-modal-btn" class="absolute top-4 right-4 text-gray-400 hover:text-white">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+                <h3 class="text-2xl font-bold mb-4">Comprar Ticket #<span id="ticket-number-modal"></span></h3>
+                <p class="text-gray-400 mb-6">Completa tus datos para reservar el ticket. Realiza el pago y coloca el número de referencia.</p>
+                <form id="purchase-form" class="space-y-4">
+                    <input type="hidden" id="selected-ticket-number">
+                    <input type="hidden" id="selected-raffle-id">
                     
-                    // Generar la lista completa de boletos con su estado
-                    const allTickets = Array.from({ length: raffle.totalTickets }, (_, i) => {
-                        const number = i + 1;
-                        const reserved = reservedTickets.find(t => t.number === number);
-                        if (reserved) {
-                            return { number, status: reserved.isSold ? 'vendido' : 'reservado', details: reserved };
-                        }
-                        return { number, status: 'disponible' };
-                    });
-                    setTickets(allTickets);
-                } catch (err) {
-                    setError(err.message);
-                    setNotification({ open: true, message: err.message, severity: 'error' });
+                    <div>
+                        <label for="ticketHolderName" class="block text-sm font-medium text-gray-300">Nombre Completo</label>
+                        <input type="text" id="ticketHolderName" name="ticketHolderName" required class="mt-1 block w-full bg-gray-700 border-gray-600 rounded-md shadow-sm focus:ring-emerald-500 focus:border-emerald-500 sm:text-sm p-2.5" placeholder="Ej: Juan Pérez">
+                    </div>
+                    <div>
+                        <label for="ticketHolderID" class="block text-sm font-medium text-gray-300">Cédula o Identificación</label>
+                        <input type="text" id="ticketHolderID" name="ticketHolderID" required class="mt-1 block w-full bg-gray-700 border-gray-600 rounded-md shadow-sm focus:ring-emerald-500 focus:border-emerald-500 sm:text-sm p-2.5" placeholder="Ej: V-12345678">
+                    </div>
+                     <div>
+                        <label for="ticketHolderPhone" class="block text-sm font-medium text-gray-300">Teléfono</label>
+                        <input type="tel" id="ticketHolderPhone" name="ticketHolderPhone" required class="mt-1 block w-full bg-gray-700 border-gray-600 rounded-md shadow-sm focus:ring-emerald-500 focus:border-emerald-500 sm:text-sm p-2.5" placeholder="Ej: +58 412-1234567">
+                    </div>
+                    <div>
+                        <label for="ticketHolderEmail" class="block text-sm font-medium text-gray-300">Correo Electrónico</red>
+                        <input type="email" id="ticketHolderEmail" name="ticketHolderEmail" required class="mt-1 block w-full bg-gray-700 border-gray-600 rounded-md shadow-sm focus:ring-emerald-500 focus:border-emerald-500 sm:text-sm p-2.5" placeholder="Ej: juan.perez@correo.com">
+                    </div>
+                    <div>
+                        <label for="referenceCode" class="block text-sm font-medium text-gray-300">Código de Referencia (Pago Móvil)</label>
+                        <input type="text" id="referenceCode" name="referenceCode" required class="mt-1 block w-full bg-gray-700 border-gray-600 rounded-md shadow-sm focus:ring-emerald-500 focus:border-emerald-500 sm:text-sm p-2.5" placeholder="Ej: 000123456789">
+                    </div>
+                    <div class="pt-4">
+                         <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 px-4 rounded-lg transition-colors duration-300 flex justify-center items-center gap-2">
+                             <span id="submit-text">Comprar Ticket</span>
+                             <div id="submit-spinner" class="spinner w-5 h-5 border-2 hidden"></div>
+                         </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // --- CONSTANTES Y VARIABLES GLOBALES ---
+            const API_BASE_URL = 'https://rifa-system.vercel.app';
+            const rafflesSection = document.getElementById('raffles-section');
+            const ticketsSection = document.getElementById('tickets-section');
+            const rafflesContainer = document.getElementById('raffles-container');
+            const ticketsGrid = document.getElementById('tickets-grid');
+            const backToRafflesBtn = document.getElementById('back-to-raffles-btn');
+            const raffleTitleDisplay = document.getElementById('raffle-title-display');
+            const raffleDetailsDisplay = document.getElementById('raffle-details-display');
+            const purchaseModal = document.getElementById('purchase-modal');
+            const modalContent = document.getElementById('modal-content');
+            const closeModalBtn = document.getElementById('close-modal-btn');
+            const purchaseForm = document.getElementById('purchase-form');
+            const loader = document.getElementById('loader');
+
+            let currentRaffleData = null; // Almacena datos de la rifa actual
+
+            // --- FUNCIONES DE LA API ---
+            
+            /**
+             * Muestra u oculta el indicador de carga.
+             * @param {boolean} show - True para mostrar, false para ocultar.
+             */
+            const toggleLoader = (show) => {
+                loader.classList.toggle('hidden', !show);
+            };
+
+             /**
+             * Muestra una notificación/alerta.
+             * @param {string} message - El mensaje a mostrar.
+             * @param {string} type - 'success' o 'error'.
+             */
+            const showAlert = (message, type = 'success') => {
+                const alertBanner = document.getElementById('alert-banner');
+                const alertMessage = document.getElementById('alert-message');
+                
+                alertMessage.textContent = message;
+                alertBanner.className = `fixed top-5 right-5 z-50 p-4 rounded-lg text-sm shadow-lg transition-transform transform translate-x-full`;
+
+                if (type === 'success') {
+                    alertBanner.classList.add('bg-emerald-500', 'text-white');
+                } else {
+                    alertBanner.classList.add('bg-red-500', 'text-white');
+                }
+
+                alertBanner.classList.remove('hidden');
+                setTimeout(() => {
+                    alertBanner.classList.remove('translate-x-full');
+                }, 10);
+                
+                setTimeout(() => {
+                    alertBanner.classList.add('translate-x-full');
+                     setTimeout(() => alertBanner.classList.add('hidden'), 300);
+                }, 5000);
+            };
+
+
+            /**
+             * Obtiene todas las rifas activas de la API.
+             */
+            const fetchRaffles = async () => {
+                toggleLoader(true);
+                try {
+                    const response = await fetch(`${API_BASE_URL}/rifas`);
+                    if (!response.ok) throw new Error('Error al cargar las rifas.');
+                    const raffles = await response.json();
+                    displayRaffles(raffles.filter(raffle => raffle.isActive));
+                } catch (error) {
+                    console.error(error);
+                    showAlert('No se pudieron cargar las rifas. Inténtalo de nuevo.', 'error');
                 } finally {
-                    setLoadingTickets(false);
+                    toggleLoader(false);
                 }
             };
 
-            const handleBackToRaffles = () => {
-                setSelectedRaffle(null);
-                setTickets([]);
+            /**
+             * Obtiene los tickets de una rifa específica.
+             * @param {string} raffleId - El ID de la rifa.
+             */
+            const fetchTickets = async (raffleId) => {
+                toggleLoader(true);
+                try {
+                    const response = await fetch(`${API_BASE_URL}/rifas/${raffleId}/tickets`);
+                    if (!response.ok) throw new Error('Error al cargar los tickets.');
+                    const tickets = await response.json();
+                    return tickets;
+                } catch (error) {
+                    console.error(error);
+                    showAlert('No se pudieron cargar los tickets de la rifa.', 'error');
+                    return []; // Devuelve un array vacío en caso de error
+                } finally {
+                    toggleLoader(false);
+                }
             };
+            
+            // --- FUNCIONES DE RENDERIZADO ---
 
-            // Manejo del formulario
-            const handleOpenPurchaseForm = (ticketNumber) => {
-                setSelectedTicketNumber(ticketNumber);
-                setPurchaseFormOpen(true);
-            };
+            /**
+             * Muestra las rifas en la página.
+             * @param {Array} raffles - Array de objetos de rifa.
+             */
+            const displayRaffles = (raffles) => {
+                rafflesContainer.innerHTML = '';
+                if (raffles.length === 0) {
+                    rafflesContainer.innerHTML = '<p class="text-gray-400 col-span-full text-center">No hay rifas activas en este momento.</p>';
+                    return;
+                }
+                raffles.forEach(raffle => {
+                    const raffleCard = document.createElement('div');
+                    raffleCard.className = 'bg-gray-800 rounded-lg shadow-lg overflow-hidden cursor-pointer transform hover:-translate-y-1 transition-transform duration-300';
+                    raffleCard.dataset.raffle = JSON.stringify(raffle);
+                    
+                    const placeholderImg = `https://placehold.co/600x400/1f2937/a0aec0?text=${encodeURIComponent(raffle.title)}`;
 
-            const handleClosePurchaseForm = () => {
-                setPurchaseFormOpen(false);
-                setSelectedTicketNumber(null);
-                // Resetear formulario
-                setFormData({
-                    ticketHolderID: '',
-                    ticketHolderName: '',
-                    ticketHolderPhone: '',
-                    ticketHolderEmail: '',
-                    referenceCode: ''
+                    raffleCard.innerHTML = `
+                        <img class="w-full h-48 object-cover" src="${raffle.imgUrl || placeholderImg}" alt="[Imagen de ${raffle.title}]" onerror="this.onerror=null;this.src='${placeholderImg}';">
+                        <div class="p-5">
+                            <h3 class="text-xl font-bold text-white mb-2">${raffle.title}</h3>
+                            <p class="text-emerald-400 text-lg font-semibold mb-3">Premio: $${raffle.budget}</p>
+                            <div class="flex justify-between text-sm text-gray-400">
+                                <span><strong class="text-white">${raffle.totalTickets}</strong> Tickets</span>
+                                <span><strong class="text-white">$${raffle.price}</strong> c/u</span>
+                            </div>
+                        </div>
+                    `;
+                    raffleCard.addEventListener('click', handleRaffleSelection);
+                    rafflesContainer.appendChild(raffleCard);
                 });
             };
 
-            const handleFormChange = (e) => {
-                const { name, value } = e.target;
-                setFormData(prev => ({ ...prev, [name]: value }));
+            /**
+             * Muestra la cuadrícula de tickets para una rifa.
+             * @param {Array} reservedTickets - Tickets ya reservados o vendidos.
+             * @param {object} raffleData - Datos completos de la rifa.
+             */
+            const displayTicketsGrid = (reservedTickets, raffleData) => {
+                ticketsGrid.innerHTML = '';
+                const reservedMap = new Map(reservedTickets.map(t => [t.number, t]));
+
+                for (let i = 1; i <= raffleData.totalTickets; i++) {
+                    const ticket = document.createElement('button');
+                    ticket.textContent = i.toString().padStart(String(raffleData.totalTickets).length, '0');
+                    ticket.dataset.number = i;
+                    
+                    let ticketClass = 'bg-gray-600 hover:bg-gray-500';
+                    let tooltipText = `Ticket #${i} (Disponible)`;
+                    ticket.disabled = false;
+
+                    if (reservedMap.has(i)) {
+                        const reservedTicket = reservedMap.get(i);
+                        if (reservedTicket.isSold) {
+                            ticketClass = 'bg-red-600 cursor-not-allowed';
+                            tooltipText = `Ticket #${i} (Vendido a ${reservedTicket.ticketHolderName})`;
+                            ticket.disabled = true;
+                        } else {
+                            ticketClass = 'bg-yellow-500 cursor-not-allowed';
+                            tooltipText = `Ticket #${i} (En proceso de validación)`;
+                            ticket.disabled = true;
+                        }
+                    }
+
+                    ticket.className = `w-12 h-12 flex items-center justify-center rounded-md font-bold text-white transition-colors duration-200 ${ticketClass}`;
+                    ticket.title = tooltipText;
+
+                    if (!ticket.disabled) {
+                        ticket.addEventListener('click', () => {
+                            openPurchaseModal(i, raffleData.id);
+                        });
+                    }
+
+                    ticketsGrid.appendChild(ticket);
+                }
+            };
+            
+            // --- MANEJADORES DE EVENTOS ---
+            
+            /**
+             * Maneja la selección de una rifa.
+             * @param {Event} event - El evento de clic.
+             */
+            const handleRaffleSelection = async (event) => {
+                currentRaffleData = JSON.parse(event.currentTarget.dataset.raffle);
+                const reservedTickets = await fetchTickets(currentRaffleData.id);
+                
+                raffleTitleDisplay.textContent = currentRaffleData.title;
+                raffleDetailsDisplay.textContent = `Premio: $${currentRaffleData.budget} | Precio por ticket: $${currentRaffleData.price}`;
+                
+                displayTicketsGrid(reservedTickets, currentRaffleData);
+
+                rafflesSection.classList.add('hidden');
+                ticketsSection.classList.remove('hidden');
+                window.scrollTo(0, 0);
             };
 
-            const handleFormSubmit = async (e) => {
-                e.preventDefault();
-                setFormSubmitting(true);
-                const purchaseData = {
-                    number: selectedTicketNumber,
-                    ...formData
+            /**
+             * Maneja el envío del formulario de compra.
+             * @param {Event} event - El evento de envío.
+             */
+            const handlePurchaseSubmit = async (event) => {
+                event.preventDefault();
+                const submitButton = event.target.querySelector('button[type="submit"]');
+                const submitText = document.getElementById('submit-text');
+                const submitSpinner = document.getElementById('submit-spinner');
+
+                submitButton.disabled = true;
+                submitText.classList.add('hidden');
+                submitSpinner.classList.remove('hidden');
+                
+                const formData = new FormData(event.target);
+                const data = {
+                    number: parseInt(document.getElementById('selected-ticket-number').value),
+                    ticketHolderID: formData.get('ticketHolderID'),
+                    ticketHolderName: formData.get('ticketHolderName'),
+                    ticketHolderPhone: formData.get('ticketHolderPhone'),
+                    ticketHolderEmail: formData.get('ticketHolderEmail'),
+                    referenceCode: formData.get('referenceCode'),
                 };
+                const raffleId = document.getElementById('selected-raffle-id').value;
 
                 try {
-                    const response = await fetch(`${RAFFLES_URL}/${selectedRaffle.id}/tickets`, {
+                    const response = await fetch(`${API_BASE_URL}/rifas/${raffleId}/tickets`, {
                         method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                        },
-                        body: JSON.stringify(purchaseData),
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(data)
                     });
 
                     if (!response.ok) {
                          const errorData = await response.json();
-                         throw new Error(errorData.message || 'No se pudo completar la compra.');
+                         throw new Error(errorData.message || 'Error al procesar la compra.');
                     }
                     
-                    setNotification({ open: true, message: `¡Boleto N° ${selectedTicketNumber} comprado exitosamente!`, severity: 'success' });
-                    handleClosePurchaseForm();
-                    // Refrescar la lista de boletos para ver el cambio
-                    await handleSelectRaffle(selectedRaffle);
+                    showAlert('¡Ticket comprado exitosamente! Está en proceso de validación.', 'success');
+                    closePurchaseModal();
+                    
+                    // Actualizar la vista de tickets
+                    const updatedTickets = await fetchTickets(raffleId);
+                    displayTicketsGrid(updatedTickets, currentRaffleData);
 
-                } catch (err) {
-                    setNotification({ open: true, message: err.message, severity: 'error' });
+                } catch (error) {
+                    console.error(error);
+                    showAlert(error.message, 'error');
                 } finally {
-                    setFormSubmitting(false);
+                    submitButton.disabled = false;
+                    submitText.classList.remove('hidden');
+                    submitSpinner.classList.add('hidden');
                 }
             };
+
+
+            // --- FUNCIONES DEL MODAL ---
             
-            // --- VISTAS CONDICIONALES ---
-            if (loading) {
-                return (
-                    <Box display="flex" justifyContent="center" alignItems="center" minHeight="100vh">
-                        <CircularProgress />
-                        <Typography variant="h6" ml={2}>Cargando Rifas...</Typography>
-                    </Box>
-                );
-            }
-
-            if (error && !selectedRaffle) { // Mostrar error principal solo si no hay rifas
-                return (
-                    <Box display="flex" justifyContent="center" alignItems="center" minHeight="100vh">
-                        <Typography color="error">{error}</Typography>
-                    </Box>
-                );
-            }
-
-            return (
-                <ThemeProvider theme={darkTheme}>
-                    <CssBaseline />
-                    <AppBar position="static" color="default" elevation={1}>
-                      <Toolbar>
-                        <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
-                          Sistema de Rifas
-                        </Typography>
-                        {selectedRaffle && (
-                            <Button variant="outlined" color="primary" onClick={handleBackToRaffles}>
-                                Volver a Rifas
-                            </Button>
-                        )}
-                      </Toolbar>
-                    </AppBar>
-                    <Container sx={{ py: 4 }}>
-                        {!selectedRaffle ? (
-                            <RaffleListView raffles={raffles} onSelectRaffle={handleSelectRaffle} />
-                        ) : (
-                            <TicketGridView
-                                raffle={selectedRaffle}
-                                tickets={tickets}
-                                loading={loadingTickets}
-                                onSelectTicket={handleOpenPurchaseForm}
-                            />
-                        )}
-                    </Container>
-
-                    {/* Formulario de compra en un Dialog */}
-                    <PurchaseForm
-                        open={purchaseFormOpen}
-                        onClose={handleClosePurchaseForm}
-                        onSubmit={handleFormSubmit}
-                        onChange={handleFormChange}
-                        formData={formData}
-                        ticketNumber={selectedTicketNumber}
-                        submitting={formSubmitting}
-                    />
-
-                    {/* Notificaciones */}
-                    <Snackbar
-                        open={notification.open}
-                        autoHideDuration={6000}
-                        onClose={() => setNotification({ ...notification, open: false })}
-                        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-                    >
-                        <Alert
-                            onClose={() => setNotification({ ...notification, open: false })}
-                            severity={notification.severity}
-                            sx={{ width: '100%' }}
-                        >
-                            {notification.message}
-                        </Alert>
-                    </Snackbar>
-                </ThemeProvider>
-            );
-        }
-
-        // --- COMPONENTES SECUNDARIOS ---
-
-        function RaffleListView({ raffles, onSelectRaffle }) {
-            return (
-                <>
-                    <Typography variant="h4" gutterBottom component="h1" align="center">
-                        Rifas Disponibles
-                    </Typography>
-                     {raffles.length === 0 ? (
-                        <Typography align="center" mt={4}>No hay rifas activas en este momento.</Typography>
-                    ) : (
-                    <Grid container spacing={4}>
-                        {raffles.map(raffle => (
-                            <Grid item key={raffle.id} xs={12} sm={6} md={4}>
-                                <Card sx={{ height: '100%', display: 'flex', flexDirection: 'column', transition: 'transform 0.2s', '&:hover': { transform: 'scale(1.03)' } }}>
-                                    <CardMedia
-                                        component="img"
-                                        height="200"
-                                        image={raffle.imgUrl || 'https://placehold.co/600x400/1e1e1e/90caf9?text=Rifa'}
-                                        alt={`Imagen de ${raffle.title}`}
-                                        onError={(e) => { e.target.onerror = null; e.target.src = 'https://placehold.co/600x400/1e1e1e/90caf9?text=Rifa'; }}
-                                    />
-                                    <CardContent sx={{ flexGrow: 1 }}>
-                                        <Typography gutterBottom variant="h5" component="h2">
-                                            {raffle.title}
-                                        </Typography>
-                                        <Typography>
-                                            <strong>Premio:</strong> ${raffle.budget}
-                                        </Typography>
-                                        <Typography>
-                                            <strong>Boletos totales:</strong> {raffle.totalTickets}
-                                        </Typography>
-                                        <Typography variant="h6" color="primary" mt={1}>
-                                            Precio: ${raffle.price}
-                                        </Typography>
-                                    </CardContent>
-                                    <CardActions>
-                                        <Button
-                                            fullWidth
-                                            variant="contained"
-                                            color="primary"
-                                            onClick={() => onSelectRaffle(raffle)}
-                                        >
-                                            Ver Boletos
-                                        </Button>
-                                    </CardActions>
-                                </Card>
-                            </Grid>
-                        ))}
-                    </Grid>
-                     )}
-                </>
-            );
-        }
-
-        function TicketGridView({ raffle, tickets, loading, onSelectTicket }) {
-            const getChipColor = (status) => {
-                switch (status) {
-                    case 'disponible': return 'success';
-                    case 'reservado': return 'warning';
-                    case 'vendido': return 'error';
-                    default: return 'default';
-                }
+            const openPurchaseModal = (ticketNumber, raffleId) => {
+                document.getElementById('ticket-number-modal').textContent = ticketNumber;
+                document.getElementById('selected-ticket-number').value = ticketNumber;
+                document.getElementById('selected-raffle-id').value = raffleId;
+                purchaseForm.reset();
+                purchaseModal.classList.remove('hidden');
+                setTimeout(() => {
+                    modalContent.classList.remove('scale-95', 'opacity-0');
+                }, 10);
             };
 
-            const getChipLabel = (status) => {
-                switch (status) {
-                    case 'disponible': return 'Disponible';
-                    case 'reservado': return 'Reservado';
-                    case 'vendido': return 'Vendido';
-                    default: return 'No definido';
-                }
+            const closePurchaseModal = () => {
+                modalContent.classList.add('scale-95', 'opacity-0');
+                 setTimeout(() => {
+                    purchaseModal.classList.add('hidden');
+                 }, 200);
             };
+
+            // --- INICIALIZACIÓN ---
             
-            return (
-                <Box>
-                    <Typography variant="h4" gutterBottom component="h2" align="center">
-                        {raffle.title}
-                    </Typography>
-                     <Typography variant="subtitle1" gutterBottom align="center" color="text.secondary">
-                        Selecciona un boleto disponible para comprar
-                    </Typography>
-                    {loading ? (
-                         <Box display="flex" justifyContent="center" alignItems="center" minHeight="40vh">
-                            <CircularProgress />
-                            <Typography variant="h6" ml={2}>Cargando Boletos...</Typography>
-                        </Box>
-                    ) : (
-                        <Grid container spacing={1} justifyContent="center" sx={{ mt: 3, p: 2, backgroundColor: 'background.paper', borderRadius: 2 }}>
-                            {tickets.map(ticket => (
-                                <Grid item key={ticket.number}>
-                                    <Chip
-                                        label={String(ticket.number).padStart(String(raffle.totalTickets).length, '0')}
-                                        color={getChipColor(ticket.status)}
-                                        variant={ticket.status === 'disponible' ? "outlined" : "filled"}
-                                        clickable={ticket.status === 'disponible'}
-                                        onClick={ticket.status === 'disponible' ? () => onSelectTicket(ticket.number) : null}
-                                        sx={{ 
-                                            fontWeight: 'bold', 
-                                            fontSize: '1rem',
-                                            cursor: ticket.status !== 'disponible' ? 'not-allowed' : 'pointer',
-                                            opacity: ticket.status === 'vendido' ? 0.6 : 1,
-                                         }}
-                                    />
-                                </Grid>
-                            ))}
-                        </Grid>
-                    )}
-                </Box>
-            );
-        }
+            backToRafflesBtn.addEventListener('click', () => {
+                ticketsSection.classList.add('hidden');
+                rafflesSection.classList.remove('hidden');
+                currentRaffleData = null;
+            });
 
-        function PurchaseForm({ open, onClose, onSubmit, onChange, formData, ticketNumber, submitting }) {
-            return (
-                <Dialog open={open} onClose={onClose} PaperProps={{ component: 'form', onSubmit: onSubmit }}>
-                    <DialogTitle>Comprar Boleto N° {ticketNumber}</DialogTitle>
-                    <DialogContent>
-                        <TextField
-                            autoFocus
-                            required
-                            margin="dense"
-                            id="ticketHolderID"
-                            name="ticketHolderID"
-                            label="Cédula de Identidad"
-                            type="text"
-                            fullWidth
-                            variant="outlined"
-                            value={formData.ticketHolderID}
-                            onChange={onChange}
-                        />
-                        <TextField
-                            required
-                            margin="dense"
-                            id="ticketHolderName"
-                            name="ticketHolderName"
-                            label="Nombre Completo"
-                            type="text"
-                            fullWidth
-                            variant="outlined"
-                            value={formData.ticketHolderName}
-                            onChange={onChange}
-                        />
-                        <TextField
-                            required
-                            margin="dense"
-                            id="ticketHolderPhone"
-                            name="ticketHolderPhone"
-                            label="Teléfono"
-                            type="tel"
-                            fullWidth
-                            variant="outlined"
-                            value={formData.ticketHolderPhone}
-                            onChange={onChange}
-                        />
-                         <TextField
-                            required
-                            margin="dense"
-                            id="ticketHolderEmail"
-                            name="ticketHolderEmail"
-                            label="Correo Electrónico"
-                            type="email"
-                            fullWidth
-                            variant="outlined"
-                            value={formData.ticketHolderEmail}
-                            onChange={onChange}
-                        />
-                         <TextField
-                            required
-                            margin="dense"
-                            id="referenceCode"
-                            name="referenceCode"
-                            label="Código de Referencia (Pago Móvil)"
-                            type="text"
-                            fullWidth
-                            variant="outlined"
-                            value={formData.referenceCode}
-                            onChange={onChange}
-                        />
-                    </DialogContent>
-                    <DialogActions>
-                        <Button onClick={onClose} color="secondary" disabled={submitting}>Cancelar</Button>
-                        <Button type="submit" variant="contained" color="primary" disabled={submitting}>
-                            {submitting ? <CircularProgress size={24} color="inherit" /> : 'Confirmar Compra'}
-                        </Button>
-                    </DialogActions>
-                </Dialog>
-            );
-        }
-        
-        const container = document.getElementById('root');
-        const root = ReactDOM.createRoot(container);
-        root.render(<App />);
+            closeModalBtn.addEventListener('click', closePurchaseModal);
+            purchaseModal.addEventListener('click', (e) => {
+                 if (e.target === purchaseModal) {
+                     closePurchaseModal();
+                 }
+            });
+            purchaseForm.addEventListener('submit', handlePurchaseSubmit);
+
+            // Cargar las rifas al iniciar la aplicación
+            fetchRaffles();
+        });
     </script>
 </body>
 </html>
-
