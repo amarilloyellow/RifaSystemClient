@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel de Administración - Sistema de Rifas</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #1f2937; }
+        ::-webkit-scrollbar-thumb { background: #4b5563; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #6b7280; }
+        .spinner {
+            border: 4px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top: 4px solid #ffffff;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body class="bg-gray-900 text-white antialiased">
+
+    <div id="app" class="container mx-auto p-4 md:p-8">
+        
+        <header class="text-center mb-10">
+            <h1 class="text-4xl md:text-5xl font-bold tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-500">Panel de Administración</h1>
+            <p class="text-gray-400 mt-2">Gestiona tus rifas y tickets de forma centralizada.</p>
+        </header>
+
+        <!-- Loader and Alerts -->
+        <div id="loader" class="fixed inset-0 bg-gray-900 bg-opacity-80 flex justify-center items-center z-50 hidden"><div class="spinner"></div></div>
+        <div id="alert-banner" class="hidden fixed top-5 right-5 z-50 p-4 rounded-lg text-sm shadow-lg"></div>
+
+        <!-- Sección de Rifas -->
+        <section id="raffles-section">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-2xl font-semibold border-l-4 border-purple-400 pl-4">Gestión de Rifas</h2>
+                <button id="add-raffle-btn" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2 px-4 rounded-lg transition-colors duration-300">Crear Rifa</button>
+            </div>
+            <div id="raffles-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <!-- Las tarjetas de rifas se insertarán aquí -->
+            </div>
+        </section>
+
+        <!-- Sección de Tickets -->
+        <section id="tickets-section" class="hidden">
+            <button id="back-to-raffles-btn" class="mb-6 bg-gray-700 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded-lg transition-colors duration-300 flex items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clip-rule="evenodd" /></svg>
+                Volver a Rifas
+            </button>
+            <div class="flex justify-between items-center mb-6">
+                <h2 id="tickets-section-title" class="text-2xl font-semibold border-l-4 border-cyan-400 pl-4">Gestión de Tickets</h2>
+                <button id="add-ticket-btn" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2 px-4 rounded-lg transition-colors duration-300">Crear Ticket</button>
+            </div>
+            <div id="tickets-grid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                <!-- Las tarjetas de tickets se insertarán aquí -->
+            </div>
+        </section>
+
+        <!-- Modal para Crear/Editar Rifa -->
+        <div id="raffle-modal" class="fixed inset-0 bg-black bg-opacity-70 flex justify-center items-center z-40 hidden p-4">
+            <div class="bg-gray-800 rounded-lg shadow-xl p-6 w-full max-w-lg relative">
+                <button class="close-modal-btn absolute top-4 right-4 text-gray-400 hover:text-white">&times;</button>
+                <h3 id="raffle-modal-title" class="text-2xl font-bold mb-6"></h3>
+                <form id="raffle-form" class="space-y-4">
+                    <input type="hidden" id="raffle-id">
+                    <div>
+                        <label for="title" class="block text-sm font-medium">Título</label>
+                        <input type="text" id="title" required class="mt-1 block w-full bg-gray-700 border-gray-600 rounded-md p-2.5">
+                    </div>
+                    <div>
+                        <label for="price" class="block text-sm font-medium">Precio del Ticket ($)</label>
+                        <input type="number" id="price" min="0" required class="mt-1 block w-full bg-gray-700 border-gray-600 rounded-md p-2.5">
+                    </div>
+                    <div>
+                        <label for="budget" class="block text-sm font-medium">Premio ($)</label>
+                        <input type="number" id="budget" min="0" required class="mt-1 block w-full bg-gray-700 border-gray-600 rounded-md p-2.5">
+                    </div>
+                    <div>
+                        <label for="totalTickets" class="block text-sm font-medium">Cantidad de Tickets</label>
+                        <input type="number" id="totalTickets" min="1" required class="mt-1 block w-full bg-gray-700 border-gray-600 rounded-md p-2.5">
+                    </div>
+                    <div>
+                        <label for="imgUrl" class="block text-sm font-medium">URL de la Imagen (Opcional)</label>
+                        <input type="url" id="imgUrl" class="mt-1 block w-full bg-gray-700 border-gray-600 rounded-md p-2.5">
+                    </div>
+                     <div class="flex items-center">
+                        <input type="checkbox" id="isActive" class="h-4 w-4 text-purple-600 bg-gray-700 border-gray-600 rounded focus:ring-purple-500">
+                        <label for="isActive" class="ml-2 block text-sm">Rifa Activa</label>
+                    </div>
+                    <button type="submit" class="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 px-4 rounded-lg">Guardar Cambios</button>
+                </form>
+            </div>
+        </div>
+        
+        <!-- Modal para Crear Ticket -->
+        <div id="create-ticket-modal" class="fixed inset-0 bg-black bg-opacity-70 flex justify-center items-center z-40 hidden p-4">
+            <div class="bg-gray-800 rounded-lg shadow-xl p-6 w-full max-w-lg relative">
+                <button class="close-modal-btn absolute top-4 right-4 text-gray-400 hover:text-white">&times;</button>
+                <h3 id="create-ticket-modal-title" class="text-2xl font-bold mb-6">Crear Nuevo Ticket</h3>
+                <form id="create-ticket-form" class="space-y-4">
+                    <div>
+                        <label for="newTicketNumber" class="block text-sm font-medium">Número del Ticket</label>
+                        <input type="number" id="newTicketNumber" min="1" required class="mt-1 block w-full bg-gray-700 border-gray-600 rounded-md p-2.5">
+                    </div>
+                    <div>
+                        <label for="newTicketHolderName" class="block text-sm font-medium">Nombre Completo</label>
+                        <input type="text" id="newTicketHolderName" required class="mt-1 block w-full bg-gray-700 border-gray-600 rounded-md p-2.5">
+                    </div>
+                     <div>
+                        <label for="newTicketHolderID" class="block text-sm font-medium">Cédula</label>
+                        <input type="text" id="newTicketHolderID" required class="mt-1 block w-full bg-gray-700 border-gray-600 rounded-md p-2.5">
+                    </div>
+                    <div>
+                        <label for="newTicketHolderPhone" class="block text-sm font-medium">Teléfono</label>
+                        <input type="tel" id="newTicketHolderPhone" required class="mt-1 block w-full bg-gray-700 border-gray-600 rounded-md p-2.5">
+                    </div>
+                    <div>
+                        <label for="newTicketHolderEmail" class="block text-sm font-medium">Email</label>
+                        <input type="email" id="newTicketHolderEmail" required class="mt-1 block w-full bg-gray-700 border-gray-600 rounded-md p-2.5">
+                    </div>
+                    <div>
+                        <label for="newReferenceCode" class="block text-sm font-medium">Código de Referencia</label>
+                        <input type="text" id="newReferenceCode" required class="mt-1 block w-full bg-gray-700 border-gray-600 rounded-md p-2.5">
+                    </div>
+                    <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 px-4 rounded-lg">Crear Ticket</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Modal para Editar Ticket -->
+        <div id="ticket-modal" class="fixed inset-0 bg-black bg-opacity-70 flex justify-center items-center z-40 hidden p-4">
+            <div class="bg-gray-800 rounded-lg shadow-xl p-6 w-full max-w-lg relative">
+                <button class="close-modal-btn absolute top-4 right-4 text-gray-400 hover:text-white">&times;</button>
+                <h3 id="ticket-modal-title" class="text-2xl font-bold mb-6"></h3>
+                <form id="ticket-form" class="space-y-4">
+                    <input type="hidden" id="ticket-id">
+                    <div>
+                        <label for="ticketHolderName" class="block text-sm font-medium">Nombre Completo</label>
+                        <input type="text" id="ticketHolderName" required class="mt-1 block w-full bg-gray-700 border-gray-600 rounded-md p-2.5">
+                    </div>
+                     <div>
+                        <label for="ticketHolderID" class="block text-sm font-medium">Cédula</label>
+                        <input type="text" id="ticketHolderID" required class="mt-1 block w-full bg-gray-700 border-gray-600 rounded-md p-2.5">
+                    </div>
+                    <div>
+                        <label for="ticketHolderPhone" class="block text-sm font-medium">Teléfono</label>
+                        <input type="tel" id="ticketHolderPhone" required class="mt-1 block w-full bg-gray-700 border-gray-600 rounded-md p-2.5">
+                    </div>
+                    <div>
+                        <label for="ticketHolderEmail" class="block text-sm font-medium">Email</label>
+                        <input type="email" id="ticketHolderEmail" required class="mt-1 block w-full bg-gray-700 border-gray-600 rounded-md p-2.5">
+                    </div>
+                    <div>
+                        <label for="referenceCode" class="block text-sm font-medium">Código de Referencia</label>
+                        <input type="text" id="referenceCode" required class="mt-1 block w-full bg-gray-700 border-gray-600 rounded-md p-2.5">
+                    </div>
+                    <button type="submit" class="w-full bg-cyan-600 hover:bg-cyan-700 text-white font-bold py-3 px-4 rounded-lg">Guardar Cambios</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Confirmation Modal -->
+        <div id="confirm-modal" class="fixed inset-0 bg-black bg-opacity-70 flex justify-center items-center z-50 hidden p-4">
+            <div class="bg-gray-800 rounded-lg shadow-xl p-6 w-full max-w-sm text-center">
+                <h3 class="text-lg font-bold mb-4">Confirmar Acción</h3>
+                <p id="confirm-message" class="text-gray-400 mb-6"></p>
+                <div class="flex justify-center gap-4">
+                    <button id="confirm-cancel-btn" class="bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-6 rounded-lg">Cancelar</button>
+                    <button id="confirm-delete-btn" class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-6 rounded-lg">Eliminar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const API_BASE_URL = 'https://rifa-system.vercel.app';
+            
+            // Sections
+            const rafflesSection = document.getElementById('raffles-section');
+            const ticketsSection = document.getElementById('tickets-section');
+            
+            // Grids
+            const rafflesGrid = document.getElementById('raffles-grid');
+            const ticketsGrid = document.getElementById('tickets-grid');
+
+            // Modals
+            const raffleModal = document.getElementById('raffle-modal');
+            const ticketModal = document.getElementById('ticket-modal');
+            const createTicketModal = document.getElementById('create-ticket-modal');
+            const confirmModal = document.getElementById('confirm-modal');
+            
+            // Forms
+            const raffleForm = document.getElementById('raffle-form');
+            const ticketForm = document.getElementById('ticket-form');
+            const createTicketForm = document.getElementById('create-ticket-form');
+            
+            // Buttons
+            const addRaffleBtn = document.getElementById('add-raffle-btn');
+            const addTicketBtn = document.getElementById('add-ticket-btn');
+            const backToRafflesBtn = document.getElementById('back-to-raffles-btn');
+            const confirmDeleteBtn = document.getElementById('confirm-delete-btn');
+            const confirmCancelBtn = document.getElementById('confirm-cancel-btn');
+
+            let currentRaffle = null;
+            let deletionCallback = null;
+
+            // --- HELPERS ---
+            const toggleLoader = (show) => document.getElementById('loader').classList.toggle('hidden', !show);
+            const showAlert = (message, isError = false) => {
+                const banner = document.getElementById('alert-banner');
+                banner.textContent = message;
+                banner.className = `fixed top-5 right-5 z-50 p-4 rounded-lg text-sm shadow-lg ${isError ? 'bg-red-500 text-white' : 'bg-emerald-500 text-white'}`;
+                banner.classList.remove('hidden');
+                setTimeout(() => banner.classList.add('hidden'), 5000);
+            };
+
+            // --- API CALLS ---
+            const api = {
+                get: (endpoint) => fetch(`${API_BASE_URL}${endpoint}`).then(res => res.ok ? res.json() : Promise.reject(res)),
+                post: (endpoint, body) => fetch(`${API_BASE_URL}${endpoint}`, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(body) }).then(res => res.ok ? res.json() : Promise.reject(res)),
+                patch: (endpoint, body) => fetch(`${API_BASE_URL}${endpoint}`, { method: 'PATCH', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(body) }).then(res => res.ok ? res.json() : Promise.reject(res)),
+                delete: (endpoint) => fetch(`${API_BASE_URL}${endpoint}`, { method: 'DELETE' }).then(res => res.ok ? res : Promise.reject(res)),
+            };
+
+            // --- RENDER FUNCTIONS ---
+            const renderRaffles = async () => {
+                toggleLoader(true);
+                try {
+                    const raffles = await api.get('/rifas');
+                    rafflesGrid.innerHTML = raffles.map(r => `
+                        <div class="bg-gray-800 rounded-lg shadow-lg p-5 flex flex-col justify-between transition-transform transform hover:-translate-y-1">
+                            <div>
+                                <div class="flex justify-between items-start mb-3">
+                                    <h3 class="text-xl font-bold text-white pr-2">${r.title}</h3>
+                                    <span class="flex-shrink-0 px-2 py-1 text-xs font-semibold rounded-full ${r.isActive ? 'bg-green-600 text-green-100' : 'bg-gray-600 text-gray-100'}">${r.isActive ? 'Activa' : 'Inactiva'}</span>
+                                </div>
+                                <div class="text-gray-400 text-sm space-y-1 mb-4 border-t border-gray-700 pt-3">
+                                    <p><strong class="font-medium text-gray-300">Premio:</strong> $${r.budget}</p>
+                                    <p><strong class="font-medium text-gray-300">Precio:</strong> $${r.price}</p>
+                                    <p><strong class="font-medium text-gray-300">Tickets:</strong> ${r.totalTickets}</p>
+                                </div>
+                            </div>
+                            <div class="flex justify-between items-center gap-2">
+                                <button data-id="${r.id}" data-title="${r.title}" class="view-tickets-btn bg-cyan-600 hover:bg-cyan-700 text-white font-bold py-2 rounded-lg w-full text-sm transition-colors">Ver Tickets</button>
+                                <button data-raffle='${JSON.stringify(r)}' class="edit-raffle-btn p-2 bg-gray-700 hover:bg-yellow-600 rounded-lg transition-colors" title="Editar Rifa">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.536L16.732 3.732z"></path></svg>
+                                </button>
+                                <button data-id="${r.id}" class="delete-raffle-btn p-2 bg-gray-700 hover:bg-red-600 rounded-lg transition-colors" title="Eliminar Rifa">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                                </button>
+                            </div>
+                        </div>
+                    `).join('');
+                } catch { showAlert('Error al cargar rifas', true); }
+                finally { toggleLoader(false); }
+            };
+
+            const renderTickets = async (raffleId, raffleTitle) => {
+                toggleLoader(true);
+                currentRaffle = { id: raffleId, title: raffleTitle };
+                document.getElementById('tickets-section-title').textContent = `Tickets para "${raffleTitle}"`;
+                try {
+                    const tickets = await api.get(`/rifas/${raffleId}/tickets`);
+                    tickets.sort((a,b) => a.number - b.number);
+                    ticketsGrid.innerHTML = tickets.map(t => `
+                        <div class="bg-gray-800 rounded-lg shadow-lg p-4 flex flex-col justify-between">
+                            <div>
+                                <div class="flex justify-between items-start mb-2">
+                                    <p class="text-lg font-bold">Ticket <span class="text-cyan-400">#${String(t.number).padStart(3, '0')}</span></p>
+                                    <span class="flex-shrink-0 px-2 py-1 text-xs font-semibold rounded-full ${t.isSold ? 'bg-emerald-600' : 'bg-yellow-600'}">${t.isSold ? 'Vendido' : 'En Proceso'}</span>
+                                </div>
+                                <div class="text-gray-300 text-sm space-y-1 mt-3 border-t border-gray-700 pt-3">
+                                    <p class="truncate" title="${t.ticketHolderName}"><strong class="font-medium text-gray-400">Nombre:</strong> ${t.ticketHolderName}</p>
+                                    <p><strong class="font-medium text-gray-400">Teléfono:</strong> ${t.ticketHolderPhone}</p>
+                                    <p><strong class="font-medium text-gray-400">Ref:</strong> ${t.referenceCode}</p>
+                                </div>
+                            </div>
+                            <div class="flex items-center gap-2 mt-4 border-t border-gray-700 pt-3">
+                                ${!t.isSold ? `<button data-id="${t.id}" class="sell-ticket-btn text-sm bg-green-600 hover:bg-green-700 text-white font-semibold py-1 px-3 rounded-md w-full transition-colors">Validar Venta</button>` : '<span class="text-sm text-green-400 font-semibold w-full text-center">Validado</span>'}
+                                <button data-ticket='${JSON.stringify(t)}' class="edit-ticket-btn p-2 bg-gray-700 hover:bg-yellow-600 rounded-md transition-colors" title="Editar Ticket">
+                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.536L16.732 3.732z"></path></svg>
+                                </button>
+                                 <button data-id="${t.id}" class="delete-ticket-btn p-2 bg-gray-700 hover:bg-red-600 rounded-md transition-colors" title="Eliminar Ticket">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                                </button>
+                            </div>
+                        </div>
+                    `).join('');
+                     if (tickets.length === 0) ticketsGrid.innerHTML = '<p class="text-gray-400 col-span-full text-center">No hay tickets para esta rifa.</p>';
+                } catch { showAlert('Error al cargar tickets', true); }
+                finally {
+                    rafflesSection.classList.add('hidden');
+                    ticketsSection.classList.remove('hidden');
+                    toggleLoader(false);
+                }
+            };
+
+            // --- MODAL FUNCTIONS ---
+            const openModal = (modal) => modal.classList.remove('hidden');
+            const closeModal = (modal) => modal.classList.add('hidden');
+
+            const openRaffleModal = (raffle = null) => {
+                raffleForm.reset();
+                document.getElementById('raffle-modal-title').textContent = raffle ? 'Editar Rifa' : 'Crear Nueva Rifa';
+                document.getElementById('raffle-id').value = raffle?.id || '';
+                if(raffle){
+                    document.getElementById('title').value = raffle.title;
+                    document.getElementById('price').value = raffle.price;
+                    document.getElementById('budget').value = raffle.budget;
+                    document.getElementById('totalTickets').value = raffle.totalTickets;
+                    document.getElementById('imgUrl').value = raffle.imgUrl || '';
+                    document.getElementById('isActive').checked = raffle.isActive;
+                } else {
+                    document.getElementById('isActive').checked = true;
+                }
+                openModal(raffleModal);
+            };
+
+            const openCreateTicketModal = () => {
+                createTicketForm.reset();
+                document.getElementById('create-ticket-modal-title').textContent = `Crear Ticket para "${currentRaffle.title}"`;
+                openModal(createTicketModal);
+            };
+            
+            const openTicketModal = (ticket) => {
+                ticketForm.reset();
+                document.getElementById('ticket-modal-title').textContent = `Editar Ticket #${ticket.number}`;
+                document.getElementById('ticket-id').value = ticket.id;
+                document.getElementById('ticketHolderName').value = ticket.ticketHolderName;
+                document.getElementById('ticketHolderID').value = ticket.ticketHolderID;
+                document.getElementById('ticketHolderPhone').value = ticket.ticketHolderPhone;
+                document.getElementById('ticketHolderEmail').value = ticket.ticketHolderEmail;
+                document.getElementById('referenceCode').value = ticket.referenceCode;
+                openModal(ticketModal);
+            };
+
+            const openConfirmModal = (message, onConfirm) => {
+                document.getElementById('confirm-message').textContent = message;
+                deletionCallback = onConfirm;
+                openModal(confirmModal);
+            };
+
+            // --- EVENT HANDLERS ---
+            addRaffleBtn.addEventListener('click', () => openRaffleModal());
+            addTicketBtn.addEventListener('click', () => openCreateTicketModal());
+
+            raffleForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                toggleLoader(true);
+                const id = document.getElementById('raffle-id').value;
+                const body = {
+                    title: document.getElementById('title').value,
+                    price: parseFloat(document.getElementById('price').value),
+                    budget: parseFloat(document.getElementById('budget').value),
+                    totalTickets: parseInt(document.getElementById('totalTickets').value),
+                    imgUrl: document.getElementById('imgUrl').value || null,
+                    isActive: document.getElementById('isActive').checked
+                };
+                try {
+                    if (id) {
+                        await api.patch(`/rifas/${id}`, body);
+                        showAlert('Rifa actualizada con éxito.');
+                    } else {
+                        await api.post('/rifas', body);
+                        showAlert('Rifa creada con éxito.');
+                    }
+                    closeModal(raffleModal);
+                    renderRaffles();
+                } catch { showAlert(`Error al guardar la rifa`, true); }
+                finally { toggleLoader(false); }
+            });
+
+            createTicketForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                toggleLoader(true);
+                const body = {
+                    number: parseInt(document.getElementById('newTicketNumber').value),
+                    ticketHolderName: document.getElementById('newTicketHolderName').value,
+                    ticketHolderID: document.getElementById('newTicketHolderID').value,
+                    ticketHolderPhone: document.getElementById('newTicketHolderPhone').value,
+                    ticketHolderEmail: document.getElementById('newTicketHolderEmail').value,
+                    referenceCode: document.getElementById('newReferenceCode').value,
+                };
+                try {
+                    await api.post(`/rifas/${currentRaffle.id}/tickets`, body);
+                    showAlert('Ticket creado con éxito.');
+                    closeModal(createTicketModal);
+                    renderTickets(currentRaffle.id, currentRaffle.title);
+                } catch (error) {
+                    let errorMessage = 'Error al crear el ticket. Es posible que el número ya exista.';
+                    try { const errorData = await error.json(); if(errorData.message) errorMessage = errorData.message; } catch {}
+                    showAlert(errorMessage, true);
+                } finally {
+                    toggleLoader(false);
+                }
+            });
+            
+             ticketForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                toggleLoader(true);
+                const id = document.getElementById('ticket-id').value;
+                const body = {
+                    ticketHolderName: document.getElementById('ticketHolderName').value,
+                    ticketHolderID: document.getElementById('ticketHolderID').value,
+                    ticketHolderPhone: document.getElementById('ticketHolderPhone').value,
+                    ticketHolderEmail: document.getElementById('ticketHolderEmail').value,
+                    referenceCode: document.getElementById('referenceCode').value
+                };
+                 try {
+                    await api.patch(`/rifas/tickets/${id}`, body);
+                    showAlert('Ticket actualizado con éxito.');
+                    closeModal(ticketModal);
+                    renderTickets(currentRaffle.id, currentRaffle.title);
+                } catch { showAlert(`Error al guardar el ticket`, true); }
+                finally { toggleLoader(false); }
+            });
+
+            document.addEventListener('click', async (e) => {
+                const editRaffleBtn = e.target.closest('.edit-raffle-btn');
+                const viewTicketsBtn = e.target.closest('.view-tickets-btn');
+                const deleteRaffleBtn = e.target.closest('.delete-raffle-btn');
+                const editTicketBtn = e.target.closest('.edit-ticket-btn');
+                const sellTicketBtn = e.target.closest('.sell-ticket-btn');
+                const deleteTicketBtn = e.target.closest('.delete-ticket-btn');
+
+                // Raffle actions
+                if (editRaffleBtn) openRaffleModal(JSON.parse(editRaffleBtn.dataset.raffle));
+                if (viewTicketsBtn) renderTickets(viewTicketsBtn.dataset.id, viewTicketsBtn.dataset.title);
+                if (deleteRaffleBtn) {
+                    const id = deleteRaffleBtn.dataset.id;
+                    openConfirmModal('¿Estás seguro de que quieres eliminar esta rifa? Esta acción no se puede deshacer.', async () => {
+                        await api.delete(`/rifas/${id}`);
+                        showAlert('Rifa eliminada.');
+                        renderRaffles();
+                    });
+                }
+                
+                // Ticket actions
+                if (editTicketBtn) openTicketModal(JSON.parse(editTicketBtn.dataset.ticket));
+                if (sellTicketBtn) {
+                    toggleLoader(true);
+                    try {
+                        await api.patch(`/rifas/tickets/${sellTicketBtn.dataset.id}/sell`);
+                        showAlert('Ticket marcado como vendido.');
+                        renderTickets(currentRaffle.id, currentRaffle.title);
+                    } catch { showAlert('Error al marcar como vendido.', true); }
+                    finally { toggleLoader(false); }
+                }
+                if (deleteTicketBtn) {
+                     const id = deleteTicketBtn.dataset.id;
+                     openConfirmModal('¿Estás seguro de que quieres eliminar este ticket?', async () => {
+                        await api.delete(`/rifas/tickets/${id}`);
+                        showAlert('Ticket eliminado.');
+                        renderTickets(currentRaffle.id, currentRaffle.title);
+                    });
+                }
+            });
+
+            backToRafflesBtn.addEventListener('click', () => {
+                ticketsSection.classList.add('hidden');
+                rafflesSection.classList.remove('hidden');
+                currentRaffle = null;
+            });
+
+            document.querySelectorAll('.close-modal-btn').forEach(btn => btn.addEventListener('click', () => {
+                closeModal(raffleModal);
+                closeModal(ticketModal);
+                closeModal(createTicketModal);
+                closeModal(confirmModal);
+            }));
+
+            confirmDeleteBtn.addEventListener('click', async () => {
+                if (deletionCallback) {
+                    toggleLoader(true);
+                    try { await deletionCallback(); } catch { showAlert('Error al eliminar.', true); }
+                    finally {
+                        toggleLoader(false);
+                        closeModal(confirmModal);
+                        deletionCallback = null;
+                    }
+                }
+            });
+
+            confirmCancelBtn.addEventListener('click', () => {
+                closeModal(confirmModal);
+                deletionCallback = null;
+            });
+            
+            // Initial Load
+            renderRaffles();
+        });
+    </script>
+</body>
+</html>
