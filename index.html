@@ -1,431 +1,553 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="es" class="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sistema de Rifas</title>
+    <!-- Carga de Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
+        /* Estilos base en modo oscuro */
         body {
             font-family: 'Inter', sans-serif;
         }
-        /* Custom scrollbar for better dark mode aesthetics */
-        ::-webkit-scrollbar {
-            width: 8px;
-        }
-        ::-webkit-scrollbar-track {
-            background: #1f2937;
-        }
-        ::-webkit-scrollbar-thumb {
-            background: #4b5563;
-            border-radius: 4px;
-        }
-        ::-webkit-scrollbar-thumb:hover {
-            background: #6b7280;
-        }
-        /* Simple spinner animation */
-        .spinner {
+
+        /* Pequeña animación de spinner para los estados de carga */
+        .loader {
             border: 4px solid rgba(255, 255, 255, 0.3);
             border-radius: 50%;
-            border-top: 4px solid #ffffff;
+            border-top: 4px solid #4f46e5; /* Color índigo de Tailwind */
             width: 40px;
             height: 40px;
             animation: spin 1s linear infinite;
         }
+
         @keyframes spin {
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
+
+        /* Estilos para el scrollbar en modo oscuro */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #1f2937; /* gray-800 */
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #4b5563; /* gray-600 */
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #6b7280; /* gray-500 */
+        }
     </style>
 </head>
-<body class="bg-gray-900 text-white antialiased">
+<body class="bg-gray-900 text-gray-100 min-h-screen antialiased">
 
-    <div id="app" class="container mx-auto p-4 md:p-8">
-        
-        <header class="text-center mb-10">
-            <h1 class="text-4xl md:text-5xl font-bold tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-cyan-500">Sistema de Rifas Moderno</h1>
-            <p class="text-gray-400 mt-2">Elige tu rifa y participa para ganar premios increíbles.</p>
+    <!-- Contenedor Principal -->
+    <div class="container mx-auto p-4 md:p-8 max-w-7xl">
+
+        <!-- Cabecera -->
+        <header class="mb-8">
+            <h1 class="text-4xl font-bold text-center text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-purple-500">
+                Sistema de Rifas
+            </h1>
         </header>
 
-        <!-- Loading Indicator -->
-        <div id="loader" class="fixed inset-0 bg-gray-900 bg-opacity-80 flex justify-center items-center z-50 hidden">
-            <div class="spinner"></div>
-        </div>
-        
-        <!-- Alertas / Notificaciones -->
-        <div id="alert-banner" class="hidden fixed top-5 right-5 z-50 p-4 rounded-lg text-sm">
-            <span id="alert-message"></span>
-        </div>
+        <!-- Vista 1: Lista de Rifas (Visible por defecto) -->
+        <main id="raffle-list-view">
+            <h2 class="text-2xl font-semibold mb-6">Selecciona una Rifa</h2>
+            
+            <!-- Loader para Rifas -->
+            <div id="raffle-loader" class="flex justify-center items-center h-64" style="display: none;">
+                <div class="loader"></div>
+            </div>
 
-
-        <!-- Sección 1: Selección de Rifa -->
-        <section id="raffles-section">
-            <h2 class="text-2xl font-semibold mb-6 border-l-4 border-emerald-400 pl-4">Rifas Disponibles</h2>
-            <div id="raffles-container" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            <!-- Grid para las tarjetas de rifas -->
+            <div id="raffle-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                 <!-- Las tarjetas de rifas se insertarán aquí dinámicamente -->
             </div>
-        </section>
+        </main>
 
-        <!-- Sección 2: Vista de Tickets -->
-        <section id="tickets-section" class="hidden">
-            <button id="back-to-raffles-btn" class="mb-6 bg-gray-700 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded-lg transition-colors duration-300 flex items-center gap-2">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                    <path fill-rule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clip-rule="evenodd" />
+        <!-- Vista 2: Detalles y Tickets de la Rifa (Oculta por defecto) -->
+        <section id="ticket-view" style="display: none;">
+            
+            <!-- Botón para volver -->
+            <button id="back-to-raffles-btn" class="mb-6 bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-lg transition-colors duration-200 inline-flex items-center">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 17l-5-5m0 0l5-5m-5 5h12" />
                 </svg>
-                Volver a las Rifas
+                Volver a la lista
             </button>
-            <div class="bg-gray-800 p-6 rounded-lg shadow-lg">
-                <h2 id="raffle-title-display" class="text-3xl font-bold mb-2"></h2>
-                <p id="raffle-details-display" class="text-gray-400 mb-6"></p>
-                <div class="flex flex-wrap gap-4 mb-6 items-center">
-                    <span class="flex items-center gap-2"><div class="w-4 h-4 rounded-full bg-gray-600"></div> Disponibles</span>
-                    <span class="flex items-center gap-2"><div class="w-4 h-4 rounded-full bg-yellow-500"></div> En Proceso</span>
-                    <span class="flex items-center gap-2"><div class="w-4 h-4 rounded-full bg-red-600"></div> Vendidos</span>
-                </div>
-                <div id="tickets-grid" class="grid grid-cols-5 sm:grid-cols-10 md:grid-cols-12 lg:grid-cols-15 xl:grid-cols-20 gap-2">
-                    <!-- Los tickets se insertarán aquí dinámicamente -->
-                </div>
+
+            <!-- Detalles de la rifa seleccionada -->
+            <div id="ticket-header-details" class="mb-6 p-4 bg-gray-800 rounded-lg shadow-md">
+                <!-- Detalles de la rifa se insertarán aquí -->
+            </div>
+
+            <!-- Leyenda de colores -->
+            <div class="flex flex-wrap gap-4 justify-center mb-6 text-sm">
+                <div class="flex items-center"><span class="w-4 h-4 rounded-full bg-gray-600 mr-2"></span>Disponible</div>
+                <div class="flex items-center"><span class="w-4 h-4 rounded-full bg-yellow-500 mr-2"></span>En Proceso</div>
+                <div class="flex items-center"><span class="w-4 h-4 rounded-full bg-red-600 mr-2"></span>Vendido</div>
+            </div>
+
+            <!-- Loader para Tickets -->
+            <div id="ticket-loader" class="flex justify-center items-center h-64" style="display: none;">
+                <div class="loader"></div>
+            </div>
+
+            <!-- Grid para los tickets -->
+            <div id="ticket-grid" class="grid grid-cols-5 sm:grid-cols-8 md:grid-cols-10 lg:grid-cols-12 gap-2">
+                <!-- Los tickets se insertarán aquí dinámicamente -->
             </div>
         </section>
 
-        <!-- Modal para el formulario de compra -->
-        <div id="purchase-modal" class="fixed inset-0 bg-black bg-opacity-70 flex justify-center items-center z-40 hidden p-4">
-            <div class="bg-gray-800 rounded-lg shadow-xl p-6 md:p-8 w-full max-w-lg relative transform transition-all scale-95 opacity-0" id="modal-content">
-                <button id="close-modal-btn" class="absolute top-4 right-4 text-gray-400 hover:text-white">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+    </div> <!-- Fin del contenedor principal -->
+
+    <!-- Modal para el Formulario de Compra (Oculto por defecto) -->
+    <div id="purchase-form-modal" style="display: none;" class="fixed inset-0 bg-black bg-opacity-75 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+        <div class="bg-gray-800 rounded-2xl shadow-2xl p-6 md:p-8 w-full max-w-lg max-h-[90vh] overflow-y-auto">
+            
+            <!-- Cabecera del Modal -->
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="text-2xl font-semibold">
+                    Comprar Ticket #<span id="ticket-number-display" class="text-indigo-400"></span>
+                </h3>
+                <button id="close-modal-btn" class="text-gray-400 hover:text-white transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
                     </svg>
                 </button>
-                <h3 class="text-2xl font-bold mb-4">Comprar Ticket #<span id="ticket-number-modal"></span></h3>
-                <p class="text-gray-400 mb-6">Completa tus datos para reservar el ticket. Realiza el pago y coloca el número de referencia.</p>
-                <form id="purchase-form" class="space-y-4">
-                    <input type="hidden" id="selected-ticket-number">
-                    <input type="hidden" id="selected-raffle-id">
-                    
-                    <div>
-                        <label for="ticketHolderName" class="block text-sm font-medium text-gray-300">Nombre Completo</label>
-                        <input type="text" id="ticketHolderName" name="ticketHolderName" required class="mt-1 block w-full bg-gray-700 border-gray-600 rounded-md shadow-sm focus:ring-emerald-500 focus:border-emerald-500 sm:text-sm p-2.5" placeholder="Ej: Juan Pérez">
-                    </div>
-                    <div>
-                        <label for="ticketHolderID" class="block text-sm font-medium text-gray-300">Cédula o Identificación</label>
-                        <input type="text" id="ticketHolderID" name="ticketHolderID" required class="mt-1 block w-full bg-gray-700 border-gray-600 rounded-md shadow-sm focus:ring-emerald-500 focus:border-emerald-500 sm:text-sm p-2.5" placeholder="Ej: V-12345678">
-                    </div>
-                     <div>
-                        <label for="ticketHolderPhone" class="block text-sm font-medium text-gray-300">Teléfono</label>
-                        <input type="tel" id="ticketHolderPhone" name="ticketHolderPhone" required class="mt-1 block w-full bg-gray-700 border-gray-600 rounded-md shadow-sm focus:ring-emerald-500 focus:border-emerald-500 sm:text-sm p-2.5" placeholder="Ej: +58 412-1234567">
-                    </div>
-                    <div>
-                        <label for="ticketHolderEmail" class="block text-sm font-medium text-gray-300">Correo Electrónico</red>
-                        <input type="email" id="ticketHolderEmail" name="ticketHolderEmail" required class="mt-1 block w-full bg-gray-700 border-gray-600 rounded-md shadow-sm focus:ring-emerald-500 focus:border-emerald-500 sm:text-sm p-2.5" placeholder="Ej: juan.perez@correo.com">
-                    </div>
-                    <div>
-                        <label for="referenceCode" class="block text-sm font-medium text-gray-300">Código de Referencia (Pago Móvil)</label>
-                        <input type="text" id="referenceCode" name="referenceCode" required class="mt-1 block w-full bg-gray-700 border-gray-600 rounded-md shadow-sm focus:ring-emerald-500 focus:border-emerald-500 sm:text-sm p-2.5" placeholder="Ej: 000123456789">
-                    </div>
-                    <div class="pt-4">
-                         <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 px-4 rounded-lg transition-colors duration-300 flex justify-center items-center gap-2">
-                             <span id="submit-text">Comprar Ticket</span>
-                             <div id="submit-spinner" class="spinner w-5 h-5 border-2 hidden"></div>
-                         </button>
-                    </div>
-                </form>
             </div>
+
+            <!-- Formulario de Compra -->
+            <form id="purchase-form">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <!-- Cédula/ID -->
+                    <div>
+                        <label for="ticketHolderID" class="block mb-1 text-sm font-medium text-gray-300">Cédula o ID</label>
+                        <input type="text" id="ticketHolderID" name="ticketHolderID" class="w-full p-3 bg-gray-700 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none" required>
+                    </div>
+
+                    <!-- Nombre Completo (AÑADIDO) -->
+                    <div>
+                        <label for="ticketHolderName" class="block mb-1 text-sm font-medium text-gray-300">Nombre Completo</label>
+                        <input type="text" id="ticketHolderName" name="ticketHolderName" class="w-full p-3 bg-gray-700 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none" required>
+                    </div>
+
+                    <!-- Teléfono (AÑADIDO) -->
+                    <div>
+                        <label for="ticketHolderPhone" class="block mb-1 text-sm font-medium text-gray-300">Teléfono</label>
+                        <input type="tel" id="ticketHolderPhone" name="ticketHolderPhone" class="w-full p-3 bg-gray-700 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none" placeholder="+58 4XX-XXXXXXX" required>
+                    </div>
+
+                    <!-- Email (AÑADIDO) -->
+                    <div>
+                        <label for="ticketHolderEmail" class="block mb-1 text-sm font-medium text-gray-300">Email</label>
+                        <input type="email" id="ticketHolderEmail" name="ticketHolderEmail" class="w-full p-3 bg-gray-700 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none" required>
+                    </div>
+
+                    <!-- Código de Referencia (Pago Móvil) (AÑADIDO) -->
+                    <div class="md:col-span-2">
+                        <label for="referenceCode" class="block mb-1 text-sm font-medium text-gray-300">Nro. Referencia (Pago Móvil)</label>
+                        <input type="text" id="referenceCode" name="referenceCode" class="w-full p-3 bg-gray-700 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none" required>
+                    </div>
+
+                    <!-- URL de la Imagen de Referencia (AHORA ES UN FILE UPLOAD) -->
+                    <div class="md:col-span-2">
+                        <label for="refImageFile" class="block mb-1 text-sm font-medium text-gray-300">Captura de Pago (Opcional)</label>
+                        <input type="file" id="refImageFile" name="refImageFile" class="w-full text-sm text-gray-400 cursor-pointer rounded-lg border border-gray-600 bg-gray-700
+                                file:mr-4 file:py-2 file:px-4 file:rounded-l-lg file:border-0 
+                                file:text-sm file:font-semibold 
+                                file:bg-indigo-600 file:text-white 
+                                hover:file:bg-indigo-700
+                                focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                    </div>
+                </div>
+
+                <!-- Botón de Envío -->
+                <div class="mt-8 text-right">
+                    <button type="submit" id="submit-purchase-btn" class="w-full md:w-auto bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-6 rounded-lg transition-colors duration-200 flex items-center justify-center">
+                        <span id="submit-btn-text">Confirmar Compra</span>
+                        <div id="form-loader" class="loader w-6 h-6 border-2" style="display: none; width: 24px; height: 24px; border-width: 3px;"></div>
+                    </button>
+                </div>
+            </form>
         </div>
     </div>
 
+    <!-- Contenedor para Mensajes/Alertas -->
+    <div id="message-box" class="fixed bottom-4 right-4 z-50 p-4 rounded-lg shadow-lg text-white transition-all duration-300" style="display: none;">
+        <!-- Mensaje se insertará aquí -->
+    </div>
+
+
+    <!-- JavaScript -->
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-            // --- CONSTANTES Y VARIABLES GLOBALES ---
+
+            // URLs de la API
             const API_BASE_URL = 'https://rifa-system.vercel.app';
-            const rafflesSection = document.getElementById('raffles-section');
-            const ticketsSection = document.getElementById('tickets-section');
-            const rafflesContainer = document.getElementById('raffles-container');
-            const ticketsGrid = document.getElementById('tickets-grid');
+
+            // Elementos del DOM
+            const raffleListView = document.getElementById('raffle-list-view');
+            const raffleGrid = document.getElementById('raffle-grid');
+            const raffleLoader = document.getElementById('raffle-loader');
+
+            const ticketView = document.getElementById('ticket-view');
+            const ticketGrid = document.getElementById('ticket-grid');
+            const ticketLoader = document.getElementById('ticket-loader');
+            const ticketHeaderDetails = document.getElementById('ticket-header-details');
             const backToRafflesBtn = document.getElementById('back-to-raffles-btn');
-            const raffleTitleDisplay = document.getElementById('raffle-title-display');
-            const raffleDetailsDisplay = document.getElementById('raffle-details-display');
-            const purchaseModal = document.getElementById('purchase-modal');
-            const modalContent = document.getElementById('modal-content');
-            const closeModalBtn = document.getElementById('close-modal-btn');
+
+            const purchaseFormModal = document.getElementById('purchase-form-modal');
             const purchaseForm = document.getElementById('purchase-form');
-            const loader = document.getElementById('loader');
+            const closeModalBtn = document.getElementById('close-modal-btn');
+            const ticketNumberDisplay = document.getElementById('ticket-number-display');
+            const formLoader = document.getElementById('form-loader');
+            const submitBtnText = document.getElementById('submit-btn-text');
+            const submitPurchaseBtn = document.getElementById('submit-purchase-btn');
 
-            let currentRaffleData = null; // Almacena datos de la rifa actual
+            const messageBox = document.getElementById('message-box');
 
-            // --- FUNCIONES DE LA API ---
-            
+            // Estado de la aplicación
+            let currentRaffles = [];
+            let selectedRaffle = null;
+            let allTickets = []; // Array de { number, status, ...data }
+            let selectedTicketNumber = null;
+            let messageTimer = null;
+
+            // --- Funciones de Utilidad ---
+
             /**
-             * Muestra u oculta el indicador de carga.
+             * Muestra u oculta un loader
+             * @param {HTMLElement} loaderElement - El elemento loader.
              * @param {boolean} show - True para mostrar, false para ocultar.
              */
-            const toggleLoader = (show) => {
-                loader.classList.toggle('hidden', !show);
-            };
-
-             /**
-             * Muestra una notificación/alerta.
-             * @param {string} message - El mensaje a mostrar.
-             * @param {string} type - 'success' o 'error'.
-             */
-            const showAlert = (message, type = 'success') => {
-                const alertBanner = document.getElementById('alert-banner');
-                const alertMessage = document.getElementById('alert-message');
-                
-                alertMessage.textContent = message;
-                alertBanner.className = `fixed top-5 right-5 z-50 p-4 rounded-lg text-sm shadow-lg transition-transform transform translate-x-full`;
-
-                if (type === 'success') {
-                    alertBanner.classList.add('bg-emerald-500', 'text-white');
-                } else {
-                    alertBanner.classList.add('bg-red-500', 'text-white');
-                }
-
-                alertBanner.classList.remove('hidden');
-                setTimeout(() => {
-                    alertBanner.classList.remove('translate-x-full');
-                }, 10);
-                
-                setTimeout(() => {
-                    alertBanner.classList.add('translate-x-full');
-                     setTimeout(() => alertBanner.classList.add('hidden'), 300);
-                }, 5000);
-            };
-
+            function showLoader(loaderElement, show) {
+                loaderElement.style.display = show ? 'flex' : 'none';
+            }
 
             /**
-             * Obtiene todas las rifas activas de la API.
+             * Muestra un mensaje de notificación.
+             * @param {string} message - El texto del mensaje.
+             * @param {boolean} [isError=false] - True si es un mensaje de error.
              */
-            const fetchRaffles = async () => {
-                toggleLoader(true);
+            function showMessage(message, isError = false) {
+                if (messageTimer) clearTimeout(messageTimer);
+                
+                messageBox.textContent = message;
+                messageBox.className = `fixed bottom-4 right-4 z-50 p-4 rounded-lg shadow-lg text-white ${isError ? 'bg-red-600' : 'bg-green-600'}`;
+                messageBox.style.display = 'block';
+
+                messageTimer = setTimeout(() => {
+                    messageBox.style.display = 'none';
+                }, 4000);
+            }
+
+            // --- Funciones Principales ---
+
+            /**
+             * 1. Obtiene todas las rifas de la API.
+             */
+            async function fetchRaffles() {
+                showLoader(raffleLoader, true);
+                raffleGrid.innerHTML = '';
                 try {
                     const response = await fetch(`${API_BASE_URL}/rifas`);
-                    if (!response.ok) throw new Error('Error al cargar las rifas.');
+                    if (!response.ok) throw new Error('No se pudieron cargar las rifas.');
+                    
                     const raffles = await response.json();
-                    displayRaffles(raffles.filter(raffle => raffle.isActive));
+                    
+                    // Asegurarnos de que la respuesta es un array
+                    if (Array.isArray(raffles)) {
+                         currentRaffles = raffles.filter(r => r.isActive);
+                    } else if (typeof raffles === 'object' && raffles !== null) {
+                        // Si la API devuelve un solo objeto, lo metemos en un array
+                        currentRaffles = [raffles].filter(r => r.isActive);
+                    } else {
+                        throw new Error('Formato de respuesta inesperado.');
+                    }
+
+                    renderRaffles();
                 } catch (error) {
-                    console.error(error);
-                    showAlert('No se pudieron cargar las rifas. Inténtalo de nuevo.', 'error');
+                    console.error('Error fetching raffles:', error);
+                    showMessage(error.message, true);
                 } finally {
-                    toggleLoader(false);
+                    showLoader(raffleLoader, false);
                 }
-            };
+            }
 
             /**
-             * Obtiene los tickets de una rifa específica.
-             * @param {string} raffleId - El ID de la rifa.
+             * 2. Renderiza las tarjetas de las rifas en el DOM.
              */
-            const fetchTickets = async (raffleId) => {
-                toggleLoader(true);
-                try {
-                    const response = await fetch(`${API_BASE_URL}/rifas/${raffleId}/tickets`);
-                    if (!response.ok) throw new Error('Error al cargar los tickets.');
-                    const tickets = await response.json();
-                    return tickets;
-                } catch (error) {
-                    console.error(error);
-                    showAlert('No se pudieron cargar los tickets de la rifa.', 'error');
-                    return []; // Devuelve un array vacío en caso de error
-                } finally {
-                    toggleLoader(false);
-                }
-            };
-            
-            // --- FUNCIONES DE RENDERIZADO ---
-
-            /**
-             * Muestra las rifas en la página.
-             * @param {Array} raffles - Array de objetos de rifa.
-             */
-            const displayRaffles = (raffles) => {
-                rafflesContainer.innerHTML = '';
-                if (raffles.length === 0) {
-                    rafflesContainer.innerHTML = '<p class="text-gray-400 col-span-full text-center">No hay rifas activas en este momento.</p>';
+            function renderRaffles() {
+                raffleGrid.innerHTML = '';
+                if (currentRaffles.length === 0) {
+                    raffleGrid.innerHTML = '<p class="col-span-full text-center text-gray-400">No hay rifas activas en este momento.</p>';
                     return;
                 }
-                raffles.forEach(raffle => {
-                    const raffleCard = document.createElement('div');
-                    raffleCard.className = 'bg-gray-800 rounded-lg shadow-lg overflow-hidden cursor-pointer transform hover:-translate-y-1 transition-transform duration-300';
-                    raffleCard.dataset.raffle = JSON.stringify(raffle);
-                    
-                    const placeholderImg = `https://placehold.co/600x400/1f2937/a0aec0?text=${encodeURIComponent(raffle.title)}`;
 
-                    raffleCard.innerHTML = `
-                        <img class="w-full h-48 object-cover" src="${raffle.imgUrl || placeholderImg}" alt="[Imagen de ${raffle.title}]" onerror="this.onerror=null;this.src='${placeholderImg}';">
+                currentRaffles.forEach(raffle => {
+                    const placeholderImg = `https://placehold.co/600x400/1f2937/9ca3af?text=${encodeURIComponent(raffle.title)}`;
+                    const img = raffle.imgUrl || placeholderImg;
+
+                    const card = document.createElement('div');
+                    card.className = 'bg-gray-800 rounded-lg shadow-lg overflow-hidden cursor-pointer transition-transform duration-300 hover:scale-105';
+                    card.dataset.raffleId = raffle.id;
+                    
+                    card.innerHTML = `
+                        <img src="${img}" alt="[Imagen de ${raffle.title}]" class="w-full h-48 object-cover" onerror="this.src='${placeholderImg}'; this.onerror=null;">
                         <div class="p-5">
-                            <h3 class="text-xl font-bold text-white mb-2">${raffle.title}</h3>
-                            <p class="text-emerald-400 text-lg font-semibold mb-3">Premio: $${raffle.budget}</p>
-                            <div class="flex justify-between text-sm text-gray-400">
-                                <span><strong class="text-white">${raffle.totalTickets}</strong> Tickets</span>
-                                <span><strong class="text-white">$${raffle.price}</strong> c/u</span>
-                            </div>
+                            <h3 class="text-xl font-bold mb-2">${raffle.title}</h3>
+                            <p class="text-gray-300 mb-1"><span class="font-semibold text-indigo-300">Premio:</span> $${raffle.budget}</p>
+                            <p class="text-gray-300 mb-1"><span class="font-semibold">Total de Tickets:</span> ${raffle.totalTickets}</p>
+                            <p class="text-gray-300"><span class="font-semibold">Precio por Ticket:</span> $${raffle.price}</p>
                         </div>
                     `;
-                    raffleCard.addEventListener('click', handleRaffleSelection);
-                    rafflesContainer.appendChild(raffleCard);
+                    raffleGrid.appendChild(card);
                 });
-            };
+            }
 
             /**
-             * Muestra la cuadrícula de tickets para una rifa.
-             * @param {Array} reservedTickets - Tickets ya reservados o vendidos.
-             * @param {object} raffleData - Datos completos de la rifa.
+             * 3. Maneja el clic en una tarjeta de rifa.
              */
-            const displayTicketsGrid = (reservedTickets, raffleData) => {
-                ticketsGrid.innerHTML = '';
-                const reservedMap = new Map(reservedTickets.map(t => [t.number, t]));
+            function handleRaffleClick(e) {
+                const card = e.target.closest('[data-raffle-id]');
+                if (!card) return;
 
-                for (let i = 1; i <= raffleData.totalTickets; i++) {
-                    const ticket = document.createElement('button');
-                    ticket.textContent = i.toString().padStart(String(raffleData.totalTickets).length, '0');
-                    ticket.dataset.number = i;
-                    
-                    let ticketClass = 'bg-gray-600 hover:bg-gray-500';
-                    let tooltipText = `Ticket #${i} (Disponible)`;
-                    ticket.disabled = false;
+                const raffleId = card.dataset.raffleId;
+                selectedRaffle = currentRaffles.find(r => r.id === raffleId);
 
-                    if (reservedMap.has(i)) {
-                        const reservedTicket = reservedMap.get(i);
-                        if (reservedTicket.isSold) {
-                            ticketClass = 'bg-red-600 cursor-not-allowed';
-                            tooltipText = `Ticket #${i} (Vendido a ${reservedTicket.ticketHolderName})`;
-                            ticket.disabled = true;
-                        } else {
-                            ticketClass = 'bg-yellow-500 cursor-not-allowed';
-                            tooltipText = `Ticket #${i} (En proceso de validación)`;
-                            ticket.disabled = true;
-                        }
+                if (selectedRaffle) {
+                    // Ocultar vista de lista y mostrar vista de tickets
+                    raffleListView.style.display = 'none';
+                    ticketView.style.display = 'block';
+                    window.scrollTo(0, 0);
+                    // Cargar los tickets
+                    fetchTickets(selectedRaffle.id);
+                }
+            }
+
+            /**
+             * 4. Obtiene los tickets (reservados/vendidos) de una rifa específica.
+             */
+            async function fetchTickets(raffleId) {
+                showLoader(ticketLoader, true);
+                ticketGrid.innerHTML = '';
+                ticketHeaderDetails.innerHTML = `
+                    <h2 class="text-3xl font-bold mb-2">${selectedRaffle.title}</h2>
+                    <p class="text-lg text-gray-300">Premio: <span class="font-semibold text-green-400">$${selectedRaffle.budget}</span> | Precio: <span class="font-semibold text-yellow-400">$${selectedRaffle.price}</span></p>
+                `;
+                
+                try {
+                    // Inicializar todos los tickets como 'disponibles'
+                    allTickets = [];
+                    const total = selectedRaffle.totalTickets;
+                    for (let i = 1; i <= total; i++) {
+                        allTickets.push({ number: i, status: 'available' });
                     }
 
-                    ticket.className = `w-12 h-12 flex items-center justify-center rounded-md font-bold text-white transition-colors duration-200 ${ticketClass}`;
-                    ticket.title = tooltipText;
+                    // Obtener los tickets reservados/vendidos
+                    const response = await fetch(`${API_BASE_URL}/rifas/${raffleId}/tickets`);
+                    if (!response.ok) throw new Error('No se pudieron cargar los tickets.');
+                    
+                    const reservedTickets = await response.json();
 
-                    if (!ticket.disabled) {
-                        ticket.addEventListener('click', () => {
-                            openPurchaseModal(i, raffleData.id);
+                    // Actualizar el estado de los tickets
+                    if (Array.isArray(reservedTickets)) {
+                        reservedTickets.forEach(reservedTicket => {
+                            const ticketIndex = allTickets.findIndex(t => t.number === reservedTicket.number);
+                            if (ticketIndex > -1) {
+                                allTickets[ticketIndex].status = reservedTicket.isSold ? 'sold' : 'pending';
+                                allTickets[ticketIndex].data = reservedTicket; // Guardar datos del comprador
+                            }
                         });
                     }
-
-                    ticketsGrid.appendChild(ticket);
+                    
+                    renderTickets();
+                } catch (error) {
+                    console.error('Error fetching tickets:', error);
+                    showMessage(error.message, true);
+                } finally {
+                    showLoader(ticketLoader, false);
                 }
-            };
-            
-            // --- MANEJADORES DE EVENTOS ---
-            
-            /**
-             * Maneja la selección de una rifa.
-             * @param {Event} event - El evento de clic.
-             */
-            const handleRaffleSelection = async (event) => {
-                currentRaffleData = JSON.parse(event.currentTarget.dataset.raffle);
-                const reservedTickets = await fetchTickets(currentRaffleData.id);
-                
-                raffleTitleDisplay.textContent = currentRaffleData.title;
-                raffleDetailsDisplay.textContent = `Premio: $${currentRaffleData.budget} | Precio por ticket: $${currentRaffleData.price}`;
-                
-                displayTicketsGrid(reservedTickets, currentRaffleData);
-
-                rafflesSection.classList.add('hidden');
-                ticketsSection.classList.remove('hidden');
-                window.scrollTo(0, 0);
-            };
+            }
 
             /**
-             * Maneja el envío del formulario de compra.
-             * @param {Event} event - El evento de envío.
+             * 5. Renderiza la cuadrícula de tickets en el DOM.
              */
-            const handlePurchaseSubmit = async (event) => {
-                event.preventDefault();
-                const submitButton = event.target.querySelector('button[type="submit"]');
-                const submitText = document.getElementById('submit-text');
-                const submitSpinner = document.getElementById('submit-spinner');
+            function renderTickets() {
+                ticketGrid.innerHTML = '';
+                const numLength = selectedRaffle.totalTickets.toString().length;
 
-                submitButton.disabled = true;
-                submitText.classList.add('hidden');
-                submitSpinner.classList.remove('hidden');
-                
-                const formData = new FormData(event.target);
-                const data = {
-                    number: parseInt(document.getElementById('selected-ticket-number').value),
-                    ticketHolderID: formData.get('ticketHolderID'),
-                    ticketHolderName: formData.get('ticketHolderName'),
-                    ticketHolderPhone: formData.get('ticketHolderPhone'),
-                    ticketHolderEmail: formData.get('ticketHolderEmail'),
-                    referenceCode: formData.get('referenceCode'),
-                };
-                const raffleId = document.getElementById('selected-raffle-id').value;
+                allTickets.forEach(ticket => {
+                    const cell = document.createElement('div');
+                    cell.className = 'h-12 w-12 md:h-14 md:w-14 flex items-center justify-center font-bold rounded-md text-sm transition-all duration-200';
+                    cell.textContent = ticket.number.toString().padStart(numLength, '0');
+                    cell.dataset.ticketNumber = ticket.number;
+                    cell.dataset.status = ticket.status;
+
+                    switch (ticket.status) {
+                        case 'available':
+                            cell.classList.add('bg-gray-600', 'text-white', 'cursor-pointer', 'hover:bg-green-500');
+                            break;
+                        case 'pending':
+                            cell.classList.add('bg-yellow-500', 'text-gray-900', 'cursor-not-allowed');
+                            break;
+                        case 'sold':
+                            cell.classList.add('bg-red-600', 'text-white', 'cursor-not-allowed', 'line-through', 'opacity-80');
+                            break;
+                    }
+                    ticketGrid.appendChild(cell);
+                });
+            }
+
+            /**
+             * 6. Maneja el clic en un ticket individual.
+             */
+            function handleTicketClick(e) {
+                const cell = e.target.closest('[data-ticket-number]');
+                if (!cell) return;
+
+                const status = cell.dataset.status;
+                if (status === 'available') {
+                    selectedTicketNumber = parseInt(cell.dataset.ticketNumber);
+                    ticketNumberDisplay.textContent = selectedTicketNumber.toString().padStart(selectedRaffle.totalTickets.toString().length, '0');
+                    purchaseForm.reset();
+                    purchaseFormModal.style.display = 'flex';
+                }
+            }
+
+            /**
+             * 7. Maneja el envío del formulario de compra.
+             */
+            async function handleFormSubmit(e) {
+                e.preventDefault();
+                showLoader(formLoader, true);
+                submitBtnText.style.display = 'none';
+                submitPurchaseBtn.disabled = true;
+
+                const fileInput = document.getElementById('refImageFile');
+                const file = fileInput.files.length > 0 ? fileInput.files[0] : null;
+                let imageUrlForUpload = null;
 
                 try {
-                    const response = await fetch(`${API_BASE_URL}/rifas/${raffleId}/tickets`, {
+                    // --- 1. Subir la imagen (si existe) ---
+                    if (file) {
+                        // El texto se actualiza, aunque esté oculto por el loader
+                        submitBtnText.textContent = 'Subiendo imagen...';
+                        
+                        const fileFormData = new FormData();
+                        fileFormData.append('file', file); // Usando 'file' como clave, según tu API
+
+                        // *** CORRECCIÓN ***
+                        // Se usa la URL absoluta de la API en lugar de una ruta relativa.
+                        const uploadResponse = await fetch(`${API_BASE_URL}/upload`, {
+                            method: 'POST',
+                            body: fileFormData,
+                            // Nota: No establezcas 'Content-Type' manualmente
+                            // el navegador lo hará por ti con el boundary correcto
+                        });
+
+                        if (!uploadResponse.ok) {
+                            throw new Error('Error al subir la captura de pago.');
+                        }
+
+                        const uploadResult = await uploadResponse.json();
+                        imageUrlForUpload = uploadResult.url; // Obtenemos la URL de Supabase
+                        
+                        // Restaurar texto del botón
+                        submitBtnText.textContent = 'Confirmar Compra';
+                    }
+
+                    // --- 2. Crear el cuerpo para la compra del ticket ---
+                    const formData = new FormData(purchaseForm);
+                    const body = {
+                        number: parseInt(selectedTicketNumber),
+                        ticketHolderID: formData.get('ticketHolderID'),
+                        ticketHolderName: formData.get('ticketHolderName'),
+                        ticketHolderPhone: formData.get('ticketHolderPhone'),
+                        ticketHolderEmail: formData.get('ticketHolderEmail'),
+                        referenceCode: formData.get('referenceCode'),
+                        refImageUrl: imageUrlForUpload, // Usar la URL de Supabase o null
+                    };
+                    
+                    // Remover campos nulos (si no se subió imagen)
+                    if (!body.refImageUrl) {
+                        delete body.refImageUrl;
+                    }
+
+                    // --- 3. Enviar el ticket ---
+                    const response = await fetch(`${API_BASE_URL}/rifas/${selectedRaffle.id}/tickets`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(data)
+                        body: JSON.stringify(body)
                     });
 
                     if (!response.ok) {
-                         const errorData = await response.json();
-                         throw new Error(errorData.message || 'Error al procesar la compra.');
+                        const errorData = await response.json();
+                        throw new Error(errorData.message || 'Error al procesar la compra.');
                     }
-                    
-                    showAlert('¡Ticket comprado exitosamente! Está en proceso de validación.', 'success');
-                    closePurchaseModal();
-                    
-                    // Actualizar la vista de tickets
-                    const updatedTickets = await fetchTickets(raffleId);
-                    displayTicketsGrid(updatedTickets, currentRaffleData);
+
+                    // Éxito
+                    showMessage('¡Ticket reservado! Está en proceso de validación.');
+                    purchaseFormModal.style.display = 'none';
+                    // Actualizar la lista de tickets para mostrar el nuevo estado
+                    fetchTickets(selectedRaffle.id);
 
                 } catch (error) {
-                    console.error(error);
-                    showAlert(error.message, 'error');
+                    console.error('Error submitting purchase:', error);
+                    showMessage(error.message, true);
                 } finally {
-                    submitButton.disabled = false;
-                    submitText.classList.remove('hidden');
-                    submitSpinner.classList.add('hidden');
+                    showLoader(formLoader, false);
+                    submitBtnText.textContent = 'Confirmar Compra'; // Asegurarse de restaurar el texto
+                    submitBtnText.style.display = 'inline';
+                    submitPurchaseBtn.disabled = false;
+                    fileInput.value = ''; // Limpiar el input de archivo
                 }
-            };
+            }
 
+            // --- Event Listeners ---
 
-            // --- FUNCIONES DEL MODAL ---
-            
-            const openPurchaseModal = (ticketNumber, raffleId) => {
-                document.getElementById('ticket-number-modal').textContent = ticketNumber;
-                document.getElementById('selected-ticket-number').value = ticketNumber;
-                document.getElementById('selected-raffle-id').value = raffleId;
-                purchaseForm.reset();
-                purchaseModal.classList.remove('hidden');
-                setTimeout(() => {
-                    modalContent.classList.remove('scale-95', 'opacity-0');
-                }, 10);
-            };
-
-            const closePurchaseModal = () => {
-                modalContent.classList.add('scale-95', 'opacity-0');
-                 setTimeout(() => {
-                    purchaseModal.classList.add('hidden');
-                 }, 200);
-            };
-
-            // --- INICIALIZACIÓN ---
-            
-            backToRafflesBtn.addEventListener('click', () => {
-                ticketsSection.classList.add('hidden');
-                rafflesSection.classList.remove('hidden');
-                currentRaffleData = null;
-            });
-
-            closeModalBtn.addEventListener('click', closePurchaseModal);
-            purchaseModal.addEventListener('click', (e) => {
-                 if (e.target === purchaseModal) {
-                     closePurchaseModal();
-                 }
-            });
-            purchaseForm.addEventListener('submit', handlePurchaseSubmit);
-
-            // Cargar las rifas al iniciar la aplicación
+            // Cargar rifas al inicio
             fetchRaffles();
+
+            // Clic en una rifa
+            raffleGrid.addEventListener('click', handleRaffleClick);
+
+            // Clic en el botón "Volver"
+            backToRafflesBtn.addEventListener('click', () => {
+                ticketView.style.display = 'none';
+                raffleListView.style.display = 'block';
+                selectedRaffle = null;
+                allTickets = [];
+                ticketGrid.innerHTML = '';
+            });
+
+            // Clic en un ticket
+            ticketGrid.addEventListener('click', handleTicketClick);
+
+            // Cerrar modal
+            closeModalBtn.addEventListener('click', () => {
+                purchaseFormModal.style.display = 'none';
+            });
+
+            // Cerrar modal haciendo clic fuera
+            purchaseFormModal.addEventListener('click', (e) => {
+                if (e.target === purchaseFormModal) {
+                    purchaseFormModal.style.display = 'none';
+                }
+            });
+
+            // Enviar formulario de compra
+            purchaseForm.addEventListener('submit', handleFormSubmit);
+
         });
     </script>
+
 </body>
 </html>
