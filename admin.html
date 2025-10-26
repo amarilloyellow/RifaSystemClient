@@ -42,831 +42,845 @@
 </head>
 <body class="bg-gray-900 text-gray-100 min-h-screen antialiased">
 
-    <!-- Contenedor Principal -->
-    <div class="container mx-auto p-4 md:p-8 max-w-7xl">
-
-        <!-- Cabecera -->
-        <header class="mb-8">
-            <h1 class="text-4xl font-bold text-center text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-purple-500">
-                Panel de Administración
-            </h1>
-        </header>
-
-        <!-- Vista 1: Administración de Rifas (Visible por defecto) -->
-        <main id="raffle-admin-view">
-            <div class="flex justify-between items-center mb-6">
-                <h2 class="text-2xl font-semibold">Gestionar Rifas</h2>
-                <button id="show-create-raffle-btn" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-lg transition-colors duration-200">
-                    + Crear Nueva Rifa
-                </button>
-            </div>
-            
-            <!-- Loader para Rifas -->
-            <div id="raffle-loader" class="flex justify-center items-center h-64" style="display: none;">
-                <div class="loader"></div>
-            </div>
-
-            <!-- Grid para las tarjetas de rifas -->
-            <div id="raffle-admin-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                <!-- Las tarjetas de rifas se insertarán aquí dinámicamente -->
-            </div>
-        </main>
-
-        <!-- Vista 2: Administración de Tickets (Oculta por defecto) -->
-        <section id="ticket-admin-view" style="display: none;">
-            <div class="flex flex-col sm:flex-row justify-between sm:items-center mb-6 gap-4">
-                <div>
-                    <button id="back-to-raffles-btn" class="bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded-lg transition-colors duration-200 inline-flex items-center">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 17l-5-5m0 0l5-5m-5 5h12" />
-                        </svg>
-                        Volver a Rifas
-                    </button>
-                    <h2 id="ticket-view-title" class="text-2xl font-semibold mt-4 sm:mt-0 sm:inline sm:ml-4">Gestionar Tickets</h2>
+    <!-- *** NUEVO: Barrera de Contraseña *** -->
+    <!-- Esto es lo único visible al cargar la página -->
+    <div id="password-gate-modal" class="fixed inset-0 bg-gray-900 flex items-center justify-center p-4 z-[100]">
+        <div class="bg-gray-800 rounded-2xl shadow-2xl p-6 md:p-8 w-full max-w-sm">
+            <h3 class="text-2xl font-semibold mb-4 text-center text-white">Acceso de Administrador</h3>
+            <p class="text-gray-400 text-center mb-6">Ingresa la contraseña para continuar.</p>
+            <form id="password-form">
+                <div class="mb-4">
+                    <label for="password-input" class="sr-only">Contraseña</label>
+                    <input type="password" id="password-input" class="w-full p-3 bg-gray-700 border border-gray-600 rounded-lg text-center" placeholder="••••••••">
                 </div>
-                <button id="show-create-ticket-btn" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg transition-colors duration-200 self-start sm:self-auto">
-                    + Crear Ticket Manual
+                <p id="password-error" class="text-red-400 text-sm text-center mb-4" style="display: none;"></p>
+                <button type="submit" id="password-submit-btn" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-6 rounded-lg transition-colors duration-200">
+                    Entrar
                 </button>
-            </div>
-
-            <!-- Loader para Tickets -->
-            <div id="ticket-loader" class="flex justify-center items-center h-64" style="display: none;">
-                <div class="loader"></div>
-            </div>
-
-            <!-- Tabla para los tickets -->
-            <div class="bg-gray-800 rounded-lg shadow-md overflow-x-auto">
-                <table class="w-full min-w-max text-left">
-                    <thead class="bg-gray-700">
-                        <tr>
-                            <th class="w-1/12">Número</th>
-                            <th class="w-3/12">Comprador</th>
-                            <th class="w-2/12">Teléfono</th>
-                            <th class="w-2/12">Estado</th>
-                            <th class="w-1/12">Ref.</th>
-                            <th class="w-3/12 text-center">Acciones</th>
-                        </tr>
-                    </thead>
-                    <tbody id="ticket-admin-list">
-                        <!-- Los tickets se insertarán aquí dinámicamente -->
-                    </tbody>
-                </table>
-            </div>
-        </section>
-
-    </div> <!-- Fin del contenedor principal -->
-
-    <!-- Modal para Crear/Editar Rifa -->
-    <div id="raffle-modal" style="display: none;" class="fixed inset-0 bg-black bg-opacity-75 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-        <div class="bg-gray-800 rounded-2xl shadow-2xl p-6 md:p-8 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-            <div class="flex justify-between items-center mb-6">
-                <h3 id="raffle-modal-title" class="text-2xl font-semibold">Crear Rifa</h3>
-                <button data-action="close-modal" class="text-gray-400 hover:text-white transition-colors">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
-                </button>
-            </div>
-
-            <form id="raffle-form">
-                <input type="hidden" id="raffleId" name="raffleId">
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div class="md:col-span-2">
-                        <label for="raffleTitle" class="block mb-1 text-sm font-medium text-gray-300">Título</label>
-                        <input type="text" id="raffleTitle" name="title" class="w-full p-3 bg-gray-700 border border-gray-600 rounded-lg" required>
-                    </div>
-                    <div class="md:col-span-2">
-                        <label for="raffleDescription" class="block mb-1 text-sm font-medium text-gray-300">Descripción (Opcional)</label>
-                        <textarea id="raffleDescription" name="description" rows="3" class="w-full p-3 bg-gray-700 border border-gray-600 rounded-lg"></textarea>
-                    </div>
-                    <div>
-                        <label for="rafflePrice" class="block mb-1 text-sm font-medium text-gray-300">Precio Ticket ($)</label>
-                        <input type="number" id="rafflePrice" name="price" step="0.01" class="w-full p-3 bg-gray-700 border border-gray-600 rounded-lg" required>
-                    </div>
-                    <div>
-                        <label for="raffleBudget" class="block mb-1 text-sm font-medium text-gray-300">Premio ($)</label>
-                        <input type="number" id="raffleBudget" name="budget" step="0.01" class="w-full p-3 bg-gray-700 border border-gray-600 rounded-lg" required>
-                    </div>
-                    <div>
-                        <label for="raffleTotalTickets" class="block mb-1 text-sm font-medium text-gray-300">Total Tickets</label>
-                        <input type="number" id="raffleTotalTickets" name="totalTickets" class="w-full p-3 bg-gray-700 border border-gray-600 rounded-lg" required>
-                    </div>
-                    <div class="flex items-end">
-                        <label class="flex items-center gap-2 text-sm font-medium text-gray-300">
-                            <input type="checkbox" id="raffleIsActive" name="isActive" class="h-5 w-5 rounded bg-gray-700 border-gray-600 text-indigo-600 focus:ring-indigo-500">
-                            ¿Rifa Activa?
-                        </label>
-                    </div>
-                     <div class="md:col-span-2">
-                        <label for="raffleImgUrlFile" class="block mb-1 text-sm font-medium text-gray-300">Imagen de la Rifa</label>
-                        <input type="file" id="raffleImgUrlFile" name="raffleImgUrlFile" class="w-full text-sm text-gray-400 cursor-pointer rounded-lg border border-gray-600 bg-gray-700
-                                file:mr-4 file:py-2 file:px-4 file:rounded-l-lg file:border-0 file:bg-indigo-600 file:text-white hover:file:bg-indigo-700">
-                        <p class="text-xs text-gray-400 mt-1">Dejar en blanco si no se quiere cambiar la imagen actual (al editar).</p>
-                    </div>
-                </div>
-                <div class="mt-8 text-right">
-                    <button type="submit" id="submit-raffle-btn" class="bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-6 rounded-lg transition-colors duration-200">
-                        Guardar Rifa
-                    </button>
-                </div>
             </form>
         </div>
     </div>
 
-    <!-- Modal para Crear/Editar Ticket -->
-    <div id="ticket-modal" style="display: none;" class="fixed inset-0 bg-black bg-opacity-75 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-        <div class="bg-gray-800 rounded-2xl shadow-2xl p-6 md:p-8 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-            <div class="flex justify-between items-center mb-6">
-                <h3 id="ticket-modal-title" class="text-2xl font-semibold">Crear Ticket</h3>
-                <button data-action="close-modal" class="text-gray-400 hover:text-white transition-colors">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
-                </button>
-            </div>
 
-            <form id="ticket-form">
-                <input type="hidden" id="ticketId" name="ticketId">
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                        <label for="ticketNumber" class="block mb-1 text-sm font-medium text-gray-300">Número de Ticket</label>
-                        <input type="number" id="ticketNumber" name="number" class="w-full p-3 bg-gray-700 border border-gray-600 rounded-lg" required>
-                    </div>
-                    <div>
-                        <label for="ticketHolderID" class="block mb-1 text-sm font-medium text-gray-300">Cédula o ID</label>
-                        <input type="text" id="ticketHolderID" name="ticketHolderID" class="w-full p-3 bg-gray-700 border border-gray-600 rounded-lg" required>
-                    </div>
-                    <div>
-                        <label for="ticketHolderName" class="block mb-1 text-sm font-medium text-gray-300">Nombre Completo</label>
-                        <input type="text" id="ticketHolderName" name="ticketHolderName" class="w-full p-3 bg-gray-700 border border-gray-600 rounded-lg" required>
-                    </div>
-                    <div>
-                        <label for="ticketHolderPhone" class="block mb-1 text-sm font-medium text-gray-300">Teléfono</label>
-                        <input type="tel" id="ticketHolderPhone" name="ticketHolderPhone" class="w-full p-3 bg-gray-700 border border-gray-600 rounded-lg" required>
-                    </div>
-                    <div class="md:col-span-2">
-                        <label for="ticketHolderEmail" class="block mb-1 text-sm font-medium text-gray-300">Email</label>
-                        <input type="email" id="ticketHolderEmail" name="ticketHolderEmail" class="w-full p-3 bg-gray-700 border border-gray-600 rounded-lg" required>
-                    </div>
-                    <div class="md:col-span-2">
-                        <label for="ticketReferenceCode" class="block mb-1 text-sm font-medium text-gray-300">Nro. Referencia (Pago)</label>
-                        <input type="text" id="ticketReferenceCode" name="referenceCode" class="w-full p-3 bg-gray-700 border border-gray-600 rounded-lg" required>
-                    </div>
-                    <div class="md:col-span-2">
-                        <label for="ticketRefImageUrlFile" class="block mb-1 text-sm font-medium text-gray-300">Captura de Pago</label>
-                        <input type="file" id="ticketRefImageUrlFile" name="ticketRefImageUrlFile" class="w-full text-sm text-gray-400 cursor-pointer rounded-lg border border-gray-600 bg-gray-700
-                                file:mr-4 file:py-2 file:px-4 file:rounded-l-lg file:border-0 file:bg-indigo-600 file:text-white hover:file:bg-indigo-700">
-                        <p class="text-xs text-gray-400 mt-1">Dejar en blanco si no se quiere cambiar la imagen actual (al editar).</p>
-                    </div>
-                     <div class="md:col-span-2">
-                        <label class="flex items-center gap-2 text-sm font-medium text-gray-300">
-                            <input type="checkbox" id="ticketIsSold" name="isSold" class="h-5 w-5 rounded bg-gray-700 border-gray-600 text-indigo-600 focus:ring-indigo-500">
-                            ¿Marcar como Vendido? (Si no, quedará 'En Proceso')
-                        </label>
-                    </div>
-                </div>
-                <div class="mt-8 text-right">
-                    <button type="submit" id="submit-ticket-btn" class="bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-6 rounded-lg transition-colors duration-200">
-                        Guardar Ticket
+    <!-- *** NUEVO: Contenedor Principal de la App *** -->
+    <!-- Todo el panel de admin está dentro de este div, oculto por defecto -->
+    <div id="main-app-container" style="display: none;">
+
+        <!-- Contenedor Principal -->
+        <div class="container mx-auto p-4 md:p-8 max-w-7xl">
+
+            <!-- Cabecera -->
+            <header class="mb-8">
+                <h1 class="text-4xl font-bold text-center text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-purple-500">
+                    Panel de Administración
+                </h1>
+            </header>
+
+            <!-- Vista 1: Administración de Rifas (Visible por defecto) -->
+            <main id="raffle-admin-view">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-2xl font-semibold">Gestionar Rifas</h2>
+                    <button id="show-create-raffle-btn" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-lg transition-colors duration-200">
+                        + Crear Nueva Rifa
                     </button>
                 </div>
-            </form>
-        </div>
-    </div>
+                
+                <!-- Loader para Rifas -->
+                <div id="raffle-loader" class="flex justify-center items-center h-64" style="display: none;">
+                    <div class="loader"></div>
+                </div>
 
-    <!-- Modal de Confirmación de Eliminación -->
-    <div id="delete-confirm-modal" style="display: none;" class="fixed inset-0 bg-black bg-opacity-75 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-        <div class="bg-gray-800 rounded-2xl shadow-2xl p-6 md:p-8 w-full max-w-md">
-            <h3 class="text-2xl font-semibold mb-4">Confirmar Eliminación</h3>
-            <p id="delete-message" class="text-gray-300 mb-6">¿Estás seguro de que deseas eliminar este elemento? Esta acción no se puede deshacer.</p>
-            <div class="flex justify-end gap-4">
-                <button data-action="close-modal" class="bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-5 rounded-lg transition-colors">
-                    Cancelar
-                </button>
-                <button id="confirm-delete-btn" class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-5 rounded-lg transition-colors">
-                    Eliminar
-                </button>
+                <!-- Grid para las tarjetas de rifas -->
+                <div id="raffle-admin-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <!-- Las tarjetas de rifas se insertarán aquí dinámicamente -->
+                </div>
+            </main>
+
+            <!-- Vista 2: Administración de Tickets (Oculta por defecto) -->
+            <section id="ticket-admin-view" style="display: none;">
+                <div class="flex flex-col sm:flex-row justify-between sm:items-center mb-6 gap-4">
+                    <div>
+                        <button id="back-to-raffles-btn" class="bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded-lg transition-colors duration-200 inline-flex items-center">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 17l-5-5m0 0l5-5m-5 5h12" />
+                            </svg>
+                            Volver a Rifas
+                        </button>
+                        <h2 id="ticket-view-title" class="text-2xl font-semibold mt-4 sm:mt-0 sm:inline sm:ml-4">Gestionar Tickets</h2>
+                    </div>
+                    <button id="show-create-ticket-btn" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg transition-colors duration-200 self-start sm:self-auto">
+                        + Crear Ticket Manual
+                    </button>
+                </div>
+
+                <!-- Loader para Tickets -->
+                <div id="ticket-loader" class="flex justify-center items-center h-64" style="display: none;">
+                    <div class="loader"></div>
+                </div>
+
+                <!-- Tabla para los tickets -->
+                <div class="bg-gray-800 rounded-lg shadow-md overflow-x-auto">
+                    <table class="w-full min-w-max text-left">
+                        <thead class="bg-gray-700">
+                            <tr>
+                                <th class="w-1/12">Número</th>
+                                <th class="w-3/12">Comprador</th>
+                                <th class="w-2/12">Teléfono</th>
+                                <th class="w-2/12">Estado</th>
+                                <th class="w-1/12">Ref.</th>
+                                <th class="w-3/12 text-center">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="ticket-admin-list">
+                            <!-- Los tickets se insertarán aquí dinámicamente -->
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+        </div> <!-- Fin del contenedor principal -->
+
+        <!-- Modal para Crear/Editar Rifa -->
+        <div id="raffle-modal" style="display: none;" class="fixed inset-0 bg-black bg-opacity-75 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+            <div class="bg-gray-800 rounded-2xl shadow-2xl p-6 md:p-8 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+                <div class="flex justify-between items-center mb-6">
+                    <h3 id="raffle-modal-title" class="text-2xl font-semibold">Crear Rifa</h3>
+                    <button data-action="close-modal" class="text-gray-400 hover:text-white transition-colors">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+                    </button>
+                </div>
+
+                <form id="raffle-form">
+                    <input type="hidden" id="raffleId" name="raffleId">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="md:col-span-2">
+                            <label for="raffleTitle" class="block mb-1 text-sm font-medium text-gray-300">Título</label>
+                            <input type="text" id="raffleTitle" name="title" class="w-full p-3 bg-gray-700 border border-gray-600 rounded-lg" required>
+                        </div>
+                        <div class="md:col-span-2">
+                            <label for="raffleDescription" class="block mb-1 text-sm font-medium text-gray-300">Descripción (Opcional)</label>
+                            <textarea id="raffleDescription" name="description" rows="3" class="w-full p-3 bg-gray-700 border border-gray-600 rounded-lg"></textarea>
+                        </div>
+                        <div>
+                            <label for="rafflePrice" class="block mb-1 text-sm font-medium text-gray-300">Precio Ticket ($)</label>
+                            <input type="number" id="rafflePrice" name="price" step="0.01" class="w-full p-3 bg-gray-700 border border-gray-600 rounded-lg" required>
+                        </div>
+                        <div>
+                            <label for="raffleBudget" class="block mb-1 text-sm font-medium text-gray-300">Premio ($)</label>
+                            <input type="number" id="raffleBudget" name="budget" step="0.01" class="w-full p-3 bg-gray-700 border border-gray-600 rounded-lg" required>
+                        </div>
+                        <div>
+                            <label for="raffleTotalTickets" class="block mb-1 text-sm font-medium text-gray-300">Total Tickets</label>
+                            <input type="number" id="raffleTotalTickets" name="totalTickets" class="w-full p-3 bg-gray-700 border border-gray-600 rounded-lg" required>
+                        </div>
+                        <div class="flex items-end">
+                            <label class="flex items-center gap-2 text-sm font-medium text-gray-300">
+                                <input type="checkbox" id="raffleIsActive" name="isActive" class="h-5 w-5 rounded bg-gray-700 border-gray-600 text-indigo-600 focus:ring-indigo-500">
+                                ¿Rifa Activa?
+                            </label>
+                        </div>
+                        <div class="md:col-span-2">
+                            <label for="raffleImgUrlFile" class="block mb-1 text-sm font-medium text-gray-300">Imagen de la Rifa</label>
+                            <input type="file" id="raffleImgUrlFile" name="raffleImgUrlFile" class="w-full text-sm text-gray-400 cursor-pointer rounded-lg border border-gray-600 bg-gray-700
+                                    file:mr-4 file:py-2 file:px-4 file:rounded-l-lg file:border-0 file:bg-indigo-600 file:text-white hover:file:bg-indigo-700">
+                            <p class="text-xs text-gray-400 mt-1">Dejar en blanco si no se quiere cambiar la imagen actual (al editar).</p>
+                        </div>
+                    </div>
+                    <div class="mt-8 text-right">
+                        <button type="submit" id="submit-raffle-btn" class="bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-6 rounded-lg transition-colors duration-200">
+                            Guardar Rifa
+                        </button>
+                    </div>
+                </form>
             </div>
         </div>
-    </div>
 
-    <!-- Contenedor para Mensajes/Alertas -->
-    <div id="message-box" class="fixed bottom-4 right-4 z-[60] p-4 rounded-lg shadow-lg text-white transition-all duration-300" style="display: none;">
-        <!-- Mensaje se insertará aquí -->
-    </div>
+        <!-- Modal para Crear/Editar Ticket -->
+        <div id="ticket-modal" style="display: none;" class="fixed inset-0 bg-black bg-opacity-75 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+            <div class="bg-gray-800 rounded-2xl shadow-2xl p-6 md:p-8 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+                <div class="flex justify-between items-center mb-6">
+                    <h3 id="ticket-modal-title" class="text-2xl font-semibold">Crear Ticket</h3>
+                    <button data-action="close-modal" class="text-gray-400 hover:text-white transition-colors">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+                    </button>
+                </div>
+
+                <form id="ticket-form">
+                    <input type="hidden" id="ticketId" name="ticketId">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label for="ticketNumber" class="block mb-1 text-sm font-medium text-gray-300">Número de Ticket</label>
+                            <input type="number" id="ticketNumber" name="number" class="w-full p-3 bg-gray-700 border border-gray-600 rounded-lg" required>
+                        </div>
+                        <div>
+                            <label for="ticketHolderID" class="block mb-1 text-sm font-medium text-gray-300">Cédula o ID</label>
+                            <input type="text" id="ticketHolderID" name="ticketHolderID" class="w-full p-3 bg-gray-700 border border-gray-600 rounded-lg" required>
+                        </div>
+                        <div>
+                            <label for="ticketHolderName" class="block mb-1 text-sm font-medium text-gray-300">Nombre Completo</label>
+                            <input type="text" id="ticketHolderName" name="ticketHolderName" class="w-full p-3 bg-gray-700 border border-gray-600 rounded-lg" required>
+                        </div>
+                        <div>
+                            <label for="ticketHolderPhone" class="block mb-1 text-sm font-medium text-gray-300">Teléfono</label>
+                            <input type="tel" id="ticketHolderPhone" name="ticketHolderPhone" class="w-full p-3 bg-gray-700 border border-gray-600 rounded-lg" required>
+                        </div>
+                        <div class="md:col-span-2">
+                            <label for="ticketHolderEmail" class="block mb-1 text-sm font-medium text-gray-300">Email</label>
+                            <input type="email" id="ticketHolderEmail" name="ticketHolderEmail" class="w-full p-3 bg-gray-700 border border-gray-600 rounded-lg" required>
+                        </div>
+                        <div class="md:col-span-2">
+                            <label for="ticketReferenceCode" class="block mb-1 text-sm font-medium text-gray-300">Nro. Referencia (Pago)</label>
+                            <input type="text" id="ticketReferenceCode" name="referenceCode" class="w-full p-3 bg-gray-700 border border-gray-600 rounded-lg" required>
+                        </div>
+                        <div class="md:col-span-2">
+                            <label for="ticketRefImageUrlFile" class="block mb-1 text-sm font-medium text-gray-300">Captura de Pago</label>
+                            <input type="file" id="ticketRefImageUrlFile" name="ticketRefImageUrlFile" class="w-full text-sm text-gray-400 cursor-pointer rounded-lg border border-gray-600 bg-gray-700
+                                    file:mr-4 file:py-2 file:px-4 file:rounded-l-lg file:border-0 file:bg-indigo-600 file:text-white hover:file:bg-indigo-700">
+                            <p class="text-xs text-gray-400 mt-1">Dejar en blanco si no se quiere cambiar la imagen actual (al editar).</p>
+                        </div>
+                        <div class="md:col-span-2">
+                            <label class="flex items-center gap-2 text-sm font-medium text-gray-300">
+                                <input type="checkbox" id="ticketIsSold" name="isSold" class="h-5 w-5 rounded bg-gray-700 border-gray-600 text-indigo-600 focus:ring-indigo-500">
+                                ¿Marcar como Vendido? (Si no, quedará 'En Proceso')
+                            </label>
+                        </div>
+                    </div>
+                    <div class="mt-8 text-right">
+                        <button type="submit" id="submit-ticket-btn" class="bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-6 rounded-lg transition-colors duration-200">
+                            Guardar Ticket
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Modal de Confirmación de Eliminación -->
+        <div id="delete-confirm-modal" style="display: none;" class="fixed inset-0 bg-black bg-opacity-75 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+            <div class="bg-gray-800 rounded-2xl shadow-2xl p-6 md:p-8 w-full max-w-md">
+                <h3 class="text-2xl font-semibold mb-4">Confirmar Eliminación</h3>
+                <p id="delete-message" class="text-gray-300 mb-6">¿Estás seguro de que deseas eliminar este elemento? Esta acción no se puede deshacer.</p>
+                <div class="flex justify-end gap-4">
+                    <button data-action="close-modal" class="bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-5 rounded-lg transition-colors">
+                        Cancelar
+                    </button>
+                    <button id="confirm-delete-btn" class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-5 rounded-lg transition-colors">
+                        Eliminar
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Contenedor para Mensajes/Alertas -->
+        <div id="message-box" class="fixed bottom-4 right-4 z-[60] p-4 rounded-lg shadow-lg text-white transition-all duration-300" style="display: none;">
+            <!-- Mensaje se insertará aquí -->
+        </div>
+    
+    </div> <!-- Fin del main-app-container -->
 
 
     <!-- JavaScript -->
     <script>
         document.addEventListener('DOMContentLoaded', () => {
 
-            // URLs de la API
-            const API_BASE_URL = 'https://rifa-system.vercel.app';
-
-            // --- Elementos del DOM ---
-            const raffleAdminView = document.getElementById('raffle-admin-view');
-            const raffleLoader = document.getElementById('raffle-loader');
-            const raffleAdminGrid = document.getElementById('raffle-admin-grid');
-            const showCreateRaffleBtn = document.getElementById('show-create-raffle-btn');
-
-            const ticketAdminView = document.getElementById('ticket-admin-view');
-            const ticketLoader = document.getElementById('ticket-loader');
-            const ticketAdminList = document.getElementById('ticket-admin-list');
-            const backToRafflesBtn = document.getElementById('back-to-raffles-btn');
-            const ticketViewTitle = document.getElementById('ticket-view-title');
-            const showCreateTicketBtn = document.getElementById('show-create-ticket-btn');
-
-            // Modales
-            const raffleModal = document.getElementById('raffle-modal');
-            const raffleForm = document.getElementById('raffle-form');
-            const raffleModalTitle = document.getElementById('raffle-modal-title');
-            const submitRaffleBtn = document.getElementById('submit-raffle-btn');
-
-            const ticketModal = document.getElementById('ticket-modal');
-            const ticketForm = document.getElementById('ticket-form');
-            const ticketModalTitle = document.getElementById('ticket-modal-title');
-            const submitTicketBtn = document.getElementById('submit-ticket-btn');
-
-            const deleteConfirmModal = document.getElementById('delete-confirm-modal');
-            const deleteMessage = document.getElementById('delete-message');
-            const confirmDeleteBtn = document.getElementById('confirm-delete-btn');
-
-            const messageBox = document.getElementById('message-box');
+            // --- *** NUEVO: LÓGICA DE BARRERA DE CONTRASEÑA *** ---
             
-            // Elementos DOM de Modales (Inputs)
-            const raffleIdInput = document.getElementById('raffleId');
-            const raffleTitleInput = document.getElementById('raffleTitle');
-            const raffleDescriptionInput = document.getElementById('raffleDescription');
-            const rafflePriceInput = document.getElementById('rafflePrice');
-            const raffleBudgetInput = document.getElementById('raffleBudget');
-            const raffleTotalTicketsInput = document.getElementById('raffleTotalTickets');
-            const raffleIsActiveInput = document.getElementById('raffleIsActive');
-            const raffleImgUrlFileInput = document.getElementById('raffleImgUrlFile');
+            // ¡CAMBIA ESTA CONTRASEÑA!
+            const ADMIN_PASS = "admin123"; 
 
-            const ticketIdInput = document.getElementById('ticketId');
-            const ticketNumberInput = document.getElementById('ticketNumber');
-            const ticketHolderIDInput = document.getElementById('ticketHolderID');
-            const ticketHolderNameInput = document.getElementById('ticketHolderName');
-            const ticketHolderPhoneInput = document.getElementById('ticketHolderPhone');
-            const ticketHolderEmailInput = document.getElementById('ticketHolderEmail');
-            const ticketReferenceCodeInput = document.getElementById('ticketReferenceCode');
-            const ticketRefImageUrlFileInput = document.getElementById('ticketRefImageUrlFile');
-            const ticketIsSoldInput = document.getElementById('ticketIsSold');
+            const passwordGateModal = document.getElementById('password-gate-modal');
+            const mainAppContainer = document.getElementById('main-app-container');
+            const passwordForm = document.getElementById('password-form');
+            const passwordInput = document.getElementById('password-input');
+            const passwordSubmitBtn = document.getElementById('password-submit-btn');
+            const passwordError = document.getElementById('password-error');
 
+            // Enfocar el campo de contraseña al cargar
+            passwordInput.focus();
 
-            // --- Estado de la Aplicación ---
-            let currentRaffles = [];
-            let currentTickets = [];
-            let editingRaffle = null; // Almacena la rifa que se está editando
-            let editingTicket = null; // Almacena el ticket que se está editando
-            let managingRaffle = null; // Almacena la rifa cuyos tickets se están gestionando
-            let deletingItem = { type: null, id: null }; // { type: 'raffle' | 'ticket', id: '...' }
-            let messageTimer = null;
+            passwordForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                checkPassword();
+            });
 
-            // --- Funciones de Utilidad ---
+            function checkPassword() {
+                const inputPass = passwordInput.value;
 
-            function showLoader(loaderElement, show) {
-                loaderElement.style.display = show ? 'flex' : 'none';
-            }
-
-            function showMessage(message, isError = false) {
-                if (messageTimer) clearTimeout(messageTimer);
-                messageBox.textContent = message;
-                messageBox.className = `fixed bottom-4 right-4 z-[60] p-4 rounded-lg shadow-lg text-white ${isError ? 'bg-red-600' : 'bg-green-600'}`;
-                messageBox.style.display = 'block';
-                messageTimer = setTimeout(() => { messageBox.style.display = 'none'; }, 4000);
-            }
-
-            function showView(viewId) {
-                raffleAdminView.style.display = viewId === 'raffle' ? 'block' : 'none';
-                ticketAdminView.style.display = viewId === 'ticket' ? 'block' : 'none';
-            }
-
-            function openModal(modalElement) {
-                modalElement.style.display = 'flex';
-            }
-
-            function closeModal(modalElement) {
-                modalElement.style.display = 'none';
-            }
-
-            /**
-             * Parsea una respuesta de error de la API, manejando JSON y no-JSON.
-             * @param {Response} response - El objeto de respuesta del fetch.
-             * @param {string} defaultMessage - Mensaje por defecto si no se encuentra uno.
-             * @returns {Promise<string>} - El mensaje de error.
-             */
-            async function parseErrorResponse(response, defaultMessage) {
-                let errorMessage = defaultMessage;
-                try {
-                    // Intenta parsear como JSON
-                    const err = await response.json();
-                    errorMessage = err.message || err.error || JSON.stringify(err) || defaultMessage;
-                } catch (e) {
-                    // Falla si no es JSON (es HTML o texto)
-                    errorMessage = `Error: ${response.status} ${response.statusText}. La respuesta no fue JSON.`;
+                if (inputPass === ADMIN_PASS) {
+                    // Contraseña correcta
+                    passwordGateModal.style.display = 'none';
+                    mainAppContainer.style.display = 'block';
+                    initializeApp(); // <-- Iniciar la aplicación de admin SOLO AHORA
+                } else {
+                    // Contraseña incorrecta
+                    passwordError.textContent = 'Contraseña incorrecta. Inténtalo de nuevo.';
+                    passwordError.style.display = 'block';
+                    passwordInput.value = '';
+                    passwordInput.focus();
                 }
-                return errorMessage;
             }
+            
+            // --- FIN DE LÓGICA DE BARRERA ---
 
-            /**
-             * Sube un archivo al endpoint /upload
-             * @param {File} file - El archivo a subir
-             * @returns {Promise<string|null>} - La URL del archivo subido o null si falla
-             */
-            async function uploadFile(file) {
-                const formData = new FormData();
-                formData.append('file', file);
+
+            // --- *** NUEVO: Función para inicializar la app *** ---
+            // Todo el código anterior se mueve dentro de esta función
+            // para que no se ejecute hasta después del login.
+            function initializeApp() {
+            
+                // URLs de la API
+                const API_BASE_URL = 'https://rifa-system.vercel.app';
+
+                // --- Elementos del DOM ---
+                const raffleAdminView = document.getElementById('raffle-admin-view');
+                const raffleLoader = document.getElementById('raffle-loader');
+                const raffleAdminGrid = document.getElementById('raffle-admin-grid');
+                const showCreateRaffleBtn = document.getElementById('show-create-raffle-btn');
+
+                const ticketAdminView = document.getElementById('ticket-admin-view');
+                const ticketLoader = document.getElementById('ticket-loader');
+                const ticketAdminList = document.getElementById('ticket-admin-list');
+                const backToRafflesBtn = document.getElementById('back-to-raffles-btn');
+                const ticketViewTitle = document.getElementById('ticket-view-title');
+                const showCreateTicketBtn = document.getElementById('show-create-ticket-btn');
+
+                // Modales
+                const raffleModal = document.getElementById('raffle-modal');
+                const raffleForm = document.getElementById('raffle-form');
+                const raffleModalTitle = document.getElementById('raffle-modal-title');
+                const submitRaffleBtn = document.getElementById('submit-raffle-btn');
+
+                const ticketModal = document.getElementById('ticket-modal');
+                const ticketForm = document.getElementById('ticket-form');
+                const ticketModalTitle = document.getElementById('ticket-modal-title');
+                const submitTicketBtn = document.getElementById('submit-ticket-btn');
+
+                const deleteConfirmModal = document.getElementById('delete-confirm-modal');
+                const deleteMessage = document.getElementById('delete-message');
+                const confirmDeleteBtn = document.getElementById('confirm-delete-btn');
+
+                const messageBox = document.getElementById('message-box');
                 
-                showMessage('Subiendo imagen...', false);
+                // Elementos DOM de Modales (Inputs)
+                const raffleIdInput = document.getElementById('raffleId');
+                const raffleTitleInput = document.getElementById('raffleTitle');
+                const raffleDescriptionInput = document.getElementById('raffleDescription');
+                const rafflePriceInput = document.getElementById('rafflePrice');
+                const raffleBudgetInput = document.getElementById('raffleBudget');
+                const raffleTotalTicketsInput = document.getElementById('raffleTotalTickets');
+                const raffleIsActiveInput = document.getElementById('raffleIsActive');
+                const raffleImgUrlFileInput = document.getElementById('raffleImgUrlFile');
 
-                try {
-                    const response = await fetch(`${API_BASE_URL}/upload`, {
-                        method: 'POST',
-                        body: formData,
-                    });
+                const ticketIdInput = document.getElementById('ticketId');
+                const ticketNumberInput = document.getElementById('ticketNumber');
+                const ticketHolderIDInput = document.getElementById('ticketHolderID');
+                const ticketHolderNameInput = document.getElementById('ticketHolderName');
+                const ticketHolderPhoneInput = document.getElementById('ticketHolderPhone');
+                const ticketHolderEmailInput = document.getElementById('ticketHolderEmail');
+                const ticketReferenceCodeInput = document.getElementById('ticketReferenceCode');
+                const ticketRefImageUrlFileInput = document.getElementById('ticketRefImageUrlFile');
+                const ticketIsSoldInput = document.getElementById('ticketIsSold');
 
-                    if (!response.ok) {
-                        const errorMsg = await parseErrorResponse(response, 'Falló la subida de imagen.');
-                        throw new Error(errorMsg);
+
+                // --- Estado de la Aplicación ---
+                let currentRaffles = [];
+                let currentTickets = [];
+                let editingRaffle = null; // Almacena la rifa que se está editando
+                let editingTicket = null; // Almacena el ticket que se está editando
+                let managingRaffle = null; // Almacena la rifa cuyos tickets se están gestionando
+                let deletingItem = { type: null, id: null }; // { type: 'raffle' | 'ticket', id: '...' }
+                let messageTimer = null;
+
+                // --- Funciones de Utilidad ---
+
+                function showLoader(loaderElement, show) {
+                    loaderElement.style.display = show ? 'flex' : 'none';
+                }
+
+                function showMessage(message, isError = false) {
+                    if (messageTimer) clearTimeout(messageTimer);
+                    messageBox.textContent = message;
+                    messageBox.className = `fixed bottom-4 right-4 z-[60] p-4 rounded-lg shadow-lg text-white ${isError ? 'bg-red-600' : 'bg-green-600'}`;
+                    messageBox.style.display = 'block';
+                    messageTimer = setTimeout(() => { messageBox.style.display = 'none'; }, 4000);
+                }
+
+                function showView(viewId) {
+                    raffleAdminView.style.display = viewId === 'raffle' ? 'block' : 'none';
+                    ticketAdminView.style.display = viewId === 'ticket' ? 'block' : 'none';
+                }
+
+                function openModal(modalElement) {
+                    modalElement.style.display = 'flex';
+                }
+
+                function closeModal(modalElement) {
+                    modalElement.style.display = 'none';
+                }
+
+                async function parseErrorResponse(response, defaultMessage) {
+                    let errorMessage = defaultMessage;
+                    try {
+                        const err = await response.json();
+                        errorMessage = err.message || err.error || JSON.stringify(err) || defaultMessage;
+                    } catch (e) {
+                        errorMessage = `Error: ${response.status} ${response.statusText}. La respuesta no fue JSON.`;
                     }
-                    
-                    const result = await response.json();
-                    showMessage('Imagen subida con éxito.', false);
-                    return result.url;
-
-                } catch (error) {
-                    console.error('Error uploading file:', error);
-                    showMessage(error.message, true);
-                    return null;
-                }
-            }
-
-            // --- Funciones de GESTIÓN DE RIFAS ---
-
-            /**
-             * 1. Obtiene todas las rifas.
-             */
-            async function fetchRaffles() {
-                showLoader(raffleLoader, true);
-                raffleAdminGrid.innerHTML = '';
-                try {
-                    const response = await fetch(`${API_BASE_URL}/rifas`);
-                    if (!response.ok) throw new Error('No se pudieron cargar las rifas.');
-                    
-                    const raffles = await response.json();
-                    currentRaffles = Array.isArray(raffles) ? raffles : [raffles]; // Asegurar que sea un array
-                    renderRaffles();
-
-                } catch (error) {
-                    console.error('Error fetching raffles:', error);
-                    showMessage(error.message, true);
-                } finally {
-                    showLoader(raffleLoader, false);
-                }
-            }
-
-            /**
-             * 2. Renderiza las tarjetas de admin de rifas.
-             */
-            function renderRaffles() {
-                raffleAdminGrid.innerHTML = '';
-                if (currentRaffles.length === 0) {
-                    raffleAdminGrid.innerHTML = '<p class="col-span-full text-center text-gray-400">No hay rifas creadas.</p>';
-                    return;
+                    return errorMessage;
                 }
 
-                currentRaffles.forEach(raffle => {
-                    const card = document.createElement('div');
-                    card.className = 'bg-gray-800 rounded-lg shadow-lg overflow-hidden flex flex-col';
+                async function uploadFile(file) {
+                    const formData = new FormData();
+                    formData.append('file', file);
                     
-                    const placeholderImg = `https://placehold.co/600x400/1f2937/9ca3af?text=${encodeURIComponent(raffle.title)}`;
-                    const img = raffle.imgUrl || placeholderImg;
+                    showMessage('Subiendo imagen...', false);
 
-                    card.innerHTML = `
-                        <img src="${img}" alt="[Imagen de ${raffle.title}]" class="w-full h-40 object-cover" onerror="this.src='${placeholderImg}'; this.onerror=null;">
-                        <div class="p-5 flex flex-col flex-grow">
-                            <h3 class="text-xl font-bold mb-2">${raffle.title}</h3>
-                            <span class="text-sm font-semibold ${raffle.isActive ? 'text-green-400' : 'text-gray-400'} mb-2">
-                                ${raffle.isActive ? 'ACTIVA' : 'INACTIVA'}
-                            </span>
-                            <p class="text-gray-300 text-sm"><span class="font-semibold">Precio:</span> $${raffle.price}</p>
-                            <p class="text-gray-300 text-sm"><span class="font-semibold">Premio:</span> $${raffle.budget}</p>
-                            <p class="text-gray-300 text-sm mb-4"><span class="font-semibold">Tickets:</span> ${raffle.totalTickets}</p>
-                            
-                            <div class="mt-auto pt-4 border-t border-gray-700 flex flex-wrap gap-2">
-                                <button data-action="manage-tickets" data-id="${raffle.id}" class="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 px-3 rounded-lg text-sm transition-colors">
-                                    Gestionar Tickets
-                                </button>
-                                <button data-action="edit-raffle" data-id="${raffle.id}" class="bg-yellow-500 hover:bg-yellow-600 text-gray-900 font-semibold py-2 px-3 rounded-lg text-sm transition-colors">
-                                    Editar
-                                </button>
-                                <!-- *** CORRECCIÓN ***: Botón de eliminar AÑADIDO DE NUEVO -->
-                                <button data-action="delete-raffle" data-id="${raffle.id}" class="bg-red-600 hover:bg-red-700 text-white font-semibold py-2 px-3 rounded-lg text-sm transition-colors">
-                                    Eliminar
-                                </button>
+                    try {
+                        const response = await fetch(`${API_BASE_URL}/upload`, {
+                            method: 'POST',
+                            body: formData,
+                        });
+
+                        if (!response.ok) {
+                            const errorMsg = await parseErrorResponse(response, 'Falló la subida de imagen.');
+                            throw new Error(errorMsg);
+                        }
+                        
+                        const result = await response.json();
+                        showMessage('Imagen subida con éxito.', false);
+                        return result.url;
+
+                    } catch (error) {
+                        console.error('Error uploading file:', error);
+                        showMessage(error.message, true);
+                        return null;
+                    }
+                }
+
+                // --- Funciones de GESTIÓN DE RIFAS ---
+
+                async function fetchRaffles() {
+                    showLoader(raffleLoader, true);
+                    raffleAdminGrid.innerHTML = '';
+                    try {
+                        const response = await fetch(`${API_BASE_URL}/rifas`);
+                        if (!response.ok) throw new Error('No se pudieron cargar las rifas.');
+                        
+                        const raffles = await response.json();
+                        currentRaffles = Array.isArray(raffles) ? raffles : [raffles]; // Asegurar que sea un array
+                        renderRaffles();
+
+                    } catch (error) {
+                        console.error('Error fetching raffles:', error);
+                        showMessage(error.message, true);
+                    } finally {
+                        showLoader(raffleLoader, false);
+                    }
+                }
+
+                function renderRaffles() {
+                    raffleAdminGrid.innerHTML = '';
+                    if (currentRaffles.length === 0) {
+                        raffleAdminGrid.innerHTML = '<p class="col-span-full text-center text-gray-400">No hay rifas creadas.</p>';
+                        return;
+                    }
+
+                    currentRaffles.forEach(raffle => {
+                        const card = document.createElement('div');
+                        card.className = 'bg-gray-800 rounded-lg shadow-lg overflow-hidden flex flex-col';
+                        
+                        const placeholderImg = `https://placehold.co/600x400/1f2937/9ca3af?text=${encodeURIComponent(raffle.title)}`;
+                        const img = raffle.imgUrl || placeholderImg;
+
+                        card.innerHTML = `
+                            <img src="${img}" alt="[Imagen de ${raffle.title}]" class="w-full h-40 object-cover" onerror="this.src='${placeholderImg}'; this.onerror=null;">
+                            <div class="p-5 flex flex-col flex-grow">
+                                <h3 class="text-xl font-bold mb-2">${raffle.title}</h3>
+                                <span class="text-sm font-semibold ${raffle.isActive ? 'text-green-400' : 'text-gray-400'} mb-2">
+                                    ${raffle.isActive ? 'ACTIVA' : 'INACTIVA'}
+                                </span>
+                                <p class="text-gray-300 text-sm"><span class="font-semibold">Precio:</span> $${raffle.price}</p>
+                                <p class="text-gray-300 text-sm"><span class="font-semibold">Premio:</span> $${raffle.budget}</p>
+                                <p class="text-gray-300 text-sm mb-4"><span class="font-semibold">Tickets:</span> ${raffle.totalTickets}</p>
+                                
+                                <div class="mt-auto pt-4 border-t border-gray-700 flex flex-wrap gap-2">
+                                    <button data-action="manage-tickets" data-id="${raffle.id}" class="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 px-3 rounded-lg text-sm transition-colors">
+                                        Gestionar Tickets
+                                    </button>
+                                    <button data-action="edit-raffle" data-id="${raffle.id}" class="bg-yellow-500 hover:bg-yellow-600 text-gray-900 font-semibold py-2 px-3 rounded-lg text-sm transition-colors">
+                                        Editar
+                                    </button>
+                                    <button data-action="delete-raffle" data-id="${raffle.id}" class="bg-red-600 hover:bg-red-700 text-white font-semibold py-2 px-3 rounded-lg text-sm transition-colors">
+                                        Eliminar
+                                    </button>
+                                </div>
                             </div>
-                        </div>
-                    `;
-                    raffleAdminGrid.appendChild(card);
-                });
-            }
-
-            /**
-             * 3. Abre el modal para crear o editar una rifa.
-             */
-            function openRaffleModal(raffle = null) {
-                raffleForm.reset();
-                if (raffle) {
-                    // Editando
-                    editingRaffle = raffle;
-                    raffleModalTitle.textContent = 'Editar Rifa';
-                    raffleIdInput.value = raffle.id;
-                    raffleTitleInput.value = raffle.title;
-                    raffleDescriptionInput.value = raffle.description || '';
-                    rafflePriceInput.value = raffle.price;
-                    raffleBudgetInput.value = raffle.budget;
-                    raffleTotalTicketsInput.value = raffle.totalTickets;
-                    raffleIsActiveInput.checked = raffle.isActive;
-                } else {
-                    // Creando
-                    editingRaffle = null;
-                    raffleModalTitle.textContent = 'Crear Nueva Rifa';
-                    raffleIsActiveInput.checked = true; // Activa por defecto
-                }
-                openModal(raffleModal);
-            }
-
-            /**
-             * 4. Maneja el envío del formulario de rifa (Crear/Editar).
-             */
-            async function handleRaffleFormSubmit(e) {
-                e.preventDefault();
-                submitRaffleBtn.disabled = true;
-                
-                let imageUrl = editingRaffle ? editingRaffle.imgUrl : null; // Conservar imagen anterior si se edita
-
-                try {
-                    // 4.1. Subir imagen si se seleccionó una nueva
-                    if (raffleImgUrlFileInput.files.length > 0) {
-                        imageUrl = await uploadFile(raffleImgUrlFileInput.files[0]);
-                        if (!imageUrl) { // Si la subida falla
-                            throw new Error("No se pudo subir la imagen, la operación fue cancelada.");
-                        }
-                    }
-
-                    // 4.2. Preparar datos
-                    const formData = new FormData(raffleForm);
-                    const body = {
-                        title: formData.get('title'),
-                        description: formData.get('description') || null,
-                        price: parseFloat(formData.get('price')),
-                        budget: parseFloat(formData.get('budget')),
-                        totalTickets: parseInt(formData.get('totalTickets')),
-                        isActive: formData.get('isActive') === 'on',
-                        imgUrl: imageUrl,
-                    };
-
-                    // 4.3. Determinar método y URL
-                    const method = editingRaffle ? 'PATCH' : 'POST';
-                    const url = editingRaffle 
-                        ? `${API_BASE_URL}/rifas/${editingRaffle.id}` 
-                        : `${API_BASE_URL}/rifas`;
-
-                    // 4.4. Enviar a la API
-                    const response = await fetch(url, {
-                        method: method,
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(body)
+                        `;
+                        raffleAdminGrid.appendChild(card);
                     });
-
-                    if (!response.ok) {
-                        const errorMsg = await parseErrorResponse(response, 'Error al guardar la rifa.');
-                        throw new Error(errorMsg);
-                    }
-
-                    showMessage(editingRaffle ? 'Rifa actualizada con éxito.' : 'Rifa creada con éxito.');
-                    closeModal(raffleModal);
-                    fetchRaffles(); // Recargar la lista de rifas
-
-                } catch (error) {
-                    console.error('Error submitting raffle:', error);
-                    showMessage(error.message, true);
-                } finally {
-                    submitRaffleBtn.disabled = false;
-                }
-            }
-
-
-            // --- Funciones de GESTIÓN DE TICKETS ---
-
-            /**
-             * 5. Obtiene los tickets de una rifa específica.
-             */
-            async function fetchTickets(raffleId) {
-                showLoader(ticketLoader, true);
-                ticketAdminList.innerHTML = '';
-                try {
-                    const response = await fetch(`${API_BASE_URL}/rifas/${raffleId}/tickets`);
-                    if (!response.ok) throw new Error('No se pudieron cargar los tickets.');
-                    
-                    const tickets = await response.json();
-                    currentTickets = Array.isArray(tickets) ? tickets : [tickets];
-                    
-                    // Ordenar por número de ticket
-                    currentTickets.sort((a, b) => a.number - b.number);
-                    
-                    renderTickets();
-                } catch (error) {
-                    console.error('Error fetching tickets:', error);
-                    showMessage(error.message, true);
-                } finally {
-                    showLoader(ticketLoader, false);
-                }
-            }
-
-            /**
-             * 6. Renderiza la tabla de tickets.
-             */
-            function renderTickets() {
-                ticketAdminList.innerHTML = '';
-                if (currentTickets.length === 0) {
-                    ticketAdminList.innerHTML = '<tr><td colspan="6" class="text-center text-gray-400 py-6">No hay tickets reservados o vendidos para esta rifa.</td></tr>';
-                    return;
                 }
 
-                const numLength = managingRaffle.totalTickets.toString().length;
-
-                currentTickets.forEach(ticket => {
-                    const row = document.createElement('tr');
-                    row.className = 'hover:bg-gray-700 transition-colors';
-                    
-                    const statusClass = ticket.isSold ? 'text-green-400' : 'text-yellow-400';
-                    const statusText = ticket.isSold ? 'Vendido' : 'En Proceso';
-
-                    row.innerHTML = `
-                        <td class="font-mono font-bold">${ticket.number.toString().padStart(numLength, '0')}</td>
-                        <td>${ticket.ticketHolderName}</td>
-                        <td>${ticket.ticketHolderPhone}</td>
-                        <td><span class="font-semibold ${statusClass}">${statusText}</span></td>
-                        <td class="text-center">
-                            ${ticket.refImageUrl ? `<a href="${ticket.refImageUrl}" target="_blank" class="text-indigo-400 hover:underline">Ver</a>` : 'N/A'}
-                        </td>
-                        <td class="text-center text-sm font-medium space-x-2">
-                            ${!ticket.isSold ? `<button data-action="mark-sold" data-id="${ticket.id}" class="bg-green-600 hover:bg-green-700 text-white py-1 px-2 rounded-lg transition-colors">Marcar Vendido</button>` : ''}
-                            <button data-action="edit-ticket" data-id="${ticket.id}" class="bg-yellow-500 hover:bg-yellow-600 text-gray-900 py-1 px-2 rounded-lg transition-colors">Editar</button>
-                            <button data-action="delete-ticket" data-id="${ticket.id}" class="bg-red-600 hover:bg-red-700 text-white py-1 px-2 rounded-lg transition-colors">Eliminar</button>
-                        </td>
-                    `;
-                    ticketAdminList.appendChild(row);
-                });
-            }
-
-            /**
-             * 7. Abre el modal para crear o editar un ticket.
-             */
-            function openTicketModal(ticket = null) {
-                ticketForm.reset();
-                if (ticket) {
-                    // Editando
-                    editingTicket = ticket;
-                    ticketModalTitle.textContent = 'Editar Ticket';
-                    ticketIdInput.value = ticket.id;
-                    ticketNumberInput.value = ticket.number;
-                    ticketHolderIDInput.value = ticket.ticketHolderID;
-                    ticketHolderNameInput.value = ticket.ticketHolderName;
-                    ticketHolderPhoneInput.value = ticket.ticketHolderPhone;
-                    ticketHolderEmailInput.value = ticket.ticketHolderEmail;
-                    ticketReferenceCodeInput.value = ticket.referenceCode;
-                    ticketIsSoldInput.checked = ticket.isSold;
-                    // No rellenamos el file input, solo se usa para subir *nuevas* imágenes
-                } else {
-                    // Creando
-                    editingTicket = null;
-                    ticketModalTitle.textContent = 'Crear Nuevo Ticket';
-                    ticketIsSoldInput.checked = false;
-                }
-                openModal(ticketModal);
-            }
-
-            /**
-             * 8. Maneja el envío del formulario de ticket (Crear/Editar).
-             */
-            async function handleTicketFormSubmit(e) {
-                e.preventDefault();
-                submitTicketBtn.disabled = true;
-                
-                let imageUrl = editingTicket ? editingTicket.refImageUrl : null;
-
-                try {
-                    // 8.1. Subir imagen si se seleccionó una
-                    if (ticketRefImageUrlFileInput.files.length > 0) {
-                        imageUrl = await uploadFile(ticketRefImageUrlFileInput.files[0]);
-                        if (!imageUrl) {
-                            throw new Error("No se pudo subir la imagen, la operación fue cancelada.");
-                        }
-                    }
-
-                    // 8.2. Preparar datos
-                    const formData = new FormData(ticketForm);
-                    const body = {
-                        number: parseInt(formData.get('number')),
-                        ticketHolderID: formData.get('ticketHolderID'),
-                        ticketHolderName: formData.get('ticketHolderName'),
-                        ticketHolderPhone: formData.get('ticketHolderPhone'),
-                        ticketHolderEmail: formData.get('ticketHolderEmail'),
-                        referenceCode: formData.get('referenceCode'),
-                        isSold: formData.get('isSold') === 'on',
-                        refImageUrl: imageUrl,
-                    };
-                    
-                    if (!body.refImageUrl) { // No enviar null si no hay imagen
-                        delete body.refImageUrl;
-                    }
-
-                    // 8.3. Determinar método y URL
-                    const method = editingTicket ? 'PATCH' : 'POST';
-                    const url = editingTicket
-                        ? `${API_BASE_URL}/rifas/tickets/${editingTicket.id}`
-                        : `${API_BASE_URL}/rifas/${managingRaffle.id}/tickets`;
-
-                    // 8.4. Enviar a la API
-                    const response = await fetch(url, {
-                        method: method,
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(body)
-                    });
-
-                    if (!response.ok) {
-                        const errorMsg = await parseErrorResponse(response, 'Error al guardar el ticket.');
-                        throw new Error(errorMsg);
-                    }
-
-                    showMessage(editingTicket ? 'Ticket actualizado.' : 'Ticket creado.');
-                    closeModal(ticketModal);
-                    fetchTickets(managingRaffle.id);
-
-                } catch (error) {
-                    console.error('Error submitting ticket:', error);
-                    showMessage(error.message, true);
-                } finally {
-                    submitTicketBtn.disabled = false;
-                }
-            }
-
-            /**
-             * 9. Maneja el clic en "Marcar Vendido".
-             */
-            async function handleMarkAsSold(ticketId) {
-                try {
-                    const response = await fetch(`${API_BASE_URL}/rifas/tickets/${ticketId}/sell`, {
-                        method: 'PATCH'
-                    });
-                    
-                    if (!response.ok) {
-                        const errorMsg = await parseErrorResponse(response, 'Error al marcar como vendido.');
-                        throw new Error(errorMsg);
-                    }
-                    
-                    showMessage('Ticket marcado como vendido.');
-                    fetchTickets(managingRaffle.id); // Recargar la lista
-
-                } catch (error) {
-                    console.error('Error marking as sold:', error);
-                    showMessage(error.message, true);
-                }
-            }
-
-            /**
-             * 10. Abre el modal de confirmación de eliminación.
-             */
-            function openDeleteModal(type, id) {
-                deletingItem = { type, id };
-                if (type === 'raffle') {
-                    const raffle = currentRaffles.find(r => r.id === id);
-                    deleteMessage.textContent = `¿Estás seguro de eliminar la rifa "${raffle.title}"? Esta acción no se puede deshacer.`;
-                } else {
-                    const ticket = currentTickets.find(t => t.id === id);
-                    deleteMessage.textContent = `¿Estás seguro de eliminar el ticket Nro. ${ticket.number}? Esta acción no se puede deshacer.`;
-                }
-                openModal(deleteConfirmModal);
-            }
-
-            /**
-             * 11. Ejecuta la eliminación (Rifa o Ticket).
-             */
-            async function handleDeleteConfirm() {
-                confirmDeleteBtn.disabled = true;
-                const { type, id } = deletingItem;
-                
-                // *** CORRECCIÓN ***: URL actualizada para eliminar rifa
-                const url = (type === 'raffle')
-                    ? `${API_BASE_URL}/rifas/${id}/delete`
-                    : `${API_BASE_URL}/rifas/tickets/${id}`;
-                
-                try {
-                    const response = await fetch(url, { method: 'DELETE' });
-                    
-                    if (!response.ok) {
-                        const errorMsg = await parseErrorResponse(response, 'Error al eliminar.');
-                        throw new Error(errorMsg);
-                    }
-                    
-                    showMessage('Elemento eliminado con éxito.');
-                    closeModal(deleteConfirmModal);
-                    
-                    if (type === 'raffle') {
-                        fetchRaffles();
+                function openRaffleModal(raffle = null) {
+                    raffleForm.reset();
+                    if (raffle) {
+                        // Editando
+                        editingRaffle = raffle;
+                        raffleModalTitle.textContent = 'Editar Rifa';
+                        raffleIdInput.value = raffle.id;
+                        raffleTitleInput.value = raffle.title;
+                        raffleDescriptionInput.value = raffle.description || '';
+                        rafflePriceInput.value = raffle.price;
+                        raffleBudgetInput.value = raffle.budget;
+                        raffleTotalTicketsInput.value = raffle.totalTickets;
+                        raffleIsActiveInput.checked = raffle.isActive;
                     } else {
+                        // Creando
+                        editingRaffle = null;
+                        raffleModalTitle.textContent = 'Crear Nueva Rifa';
+                        raffleIsActiveInput.checked = true; // Activa por defecto
+                    }
+                    openModal(raffleModal);
+                }
+
+                async function handleRaffleFormSubmit(e) {
+                    e.preventDefault();
+                    submitRaffleBtn.disabled = true;
+                    
+                    let imageUrl = editingRaffle ? editingRaffle.imgUrl : null; // Conservar imagen anterior si se edita
+
+                    try {
+                        if (raffleImgUrlFileInput.files.length > 0) {
+                            imageUrl = await uploadFile(raffleImgUrlFileInput.files[0]);
+                            if (!imageUrl) { 
+                                throw new Error("No se pudo subir la imagen, la operación fue cancelada.");
+                            }
+                        }
+
+                        const formData = new FormData(raffleForm);
+                        const body = {
+                            title: formData.get('title'),
+                            description: formData.get('description') || null,
+                            price: parseFloat(formData.get('price')),
+                            budget: parseFloat(formData.get('budget')),
+                            totalTickets: parseInt(formData.get('totalTickets')),
+                            isActive: formData.get('isActive') === 'on',
+                            imgUrl: imageUrl,
+                        };
+
+                        const method = editingRaffle ? 'PATCH' : 'POST';
+                        const url = editingRaffle 
+                            ? `${API_BASE_URL}/rifas/${editingRaffle.id}` 
+                            : `${API_BASE_URL}/rifas`;
+
+                        const response = await fetch(url, {
+                            method: method,
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(body)
+                        });
+
+                        if (!response.ok) {
+                            const errorMsg = await parseErrorResponse(response, 'Error al guardar la rifa.');
+                            throw new Error(errorMsg);
+                        }
+
+                        showMessage(editingRaffle ? 'Rifa actualizada con éxito.' : 'Rifa creada con éxito.');
+                        closeModal(raffleModal);
+                        fetchRaffles(); 
+
+                    } catch (error) {
+                        console.error('Error submitting raffle:', error);
+                        showMessage(error.message, true);
+                    } finally {
+                        submitRaffleBtn.disabled = false;
+                    }
+                }
+
+                // --- Funciones de GESTIÓN DE TICKETS ---
+
+                async function fetchTickets(raffleId) {
+                    showLoader(ticketLoader, true);
+                    ticketAdminList.innerHTML = '';
+                    try {
+                        const response = await fetch(`${API_BASE_URL}/rifas/${raffleId}/tickets`);
+                        if (!response.ok) throw new Error('No se pudieron cargar los tickets.');
+                        
+                        const tickets = await response.json();
+                        currentTickets = Array.isArray(tickets) ? tickets : [tickets];
+                        
+                        currentTickets.sort((a, b) => a.number - b.number);
+                        
+                        renderTickets();
+                    } catch (error) {
+                        console.error('Error fetching tickets:', error);
+                        showMessage(error.message, true);
+                    } finally {
+                        showLoader(ticketLoader, false);
+                    }
+                }
+
+                function renderTickets() {
+                    ticketAdminList.innerHTML = '';
+                    if (currentTickets.length === 0) {
+                        ticketAdminList.innerHTML = '<tr><td colspan="6" class="text-center text-gray-400 py-6">No hay tickets reservados o vendidos para esta rifa.</td></tr>';
+                        return;
+                    }
+
+                    const numLength = managingRaffle.totalTickets.toString().length;
+
+                    currentTickets.forEach(ticket => {
+                        const row = document.createElement('tr');
+                        row.className = 'hover:bg-gray-700 transition-colors';
+                        
+                        const statusClass = ticket.isSold ? 'text-green-400' : 'text-yellow-400';
+                        const statusText = ticket.isSold ? 'Vendido' : 'En Proceso';
+
+                        row.innerHTML = `
+                            <td class="font-mono font-bold">${ticket.number.toString().padStart(numLength, '0')}</td>
+                            <td>${ticket.ticketHolderName}</td>
+                            <td>${ticket.ticketHolderPhone}</td>
+                            <td><span class="font-semibold ${statusClass}">${statusText}</span></td>
+                            <td class="text-center">
+                                ${ticket.refImageUrl ? `<a href="${ticket.refImageUrl}" target="_blank" class="text-indigo-400 hover:underline">Ver</a>` : 'N/A'}
+                            </td>
+                            <td class="text-center text-sm font-medium space-x-2">
+                                ${!ticket.isSold ? `<button data-action="mark-sold" data-id="${ticket.id}" class="bg-green-600 hover:bg-green-700 text-white py-1 px-2 rounded-lg transition-colors">Marcar Vendido</button>` : ''}
+                                <button data-action="edit-ticket" data-id="${ticket.id}" class="bg-yellow-500 hover:bg-yellow-600 text-gray-900 py-1 px-2 rounded-lg transition-colors">Editar</button>
+                                <button data-action="delete-ticket" data-id="${ticket.id}" class="bg-red-600 hover:bg-red-700 text-white py-1 px-2 rounded-lg transition-colors">Eliminar</button>
+                            </td>
+                        `;
+                        ticketAdminList.appendChild(row);
+                    });
+                }
+
+                function openTicketModal(ticket = null) {
+                    ticketForm.reset();
+                    if (ticket) {
+                        // Editando
+                        editingTicket = ticket;
+                        ticketModalTitle.textContent = 'Editar Ticket';
+                        ticketIdInput.value = ticket.id;
+                        ticketNumberInput.value = ticket.number;
+                        ticketHolderIDInput.value = ticket.ticketHolderID;
+                        ticketHolderNameInput.value = ticket.ticketHolderName;
+                        ticketHolderPhoneInput.value = ticket.ticketHolderPhone;
+                        ticketHolderEmailInput.value = ticket.ticketHolderEmail;
+                        ticketReferenceCodeInput.value = ticket.referenceCode;
+                        ticketIsSoldInput.checked = ticket.isSold;
+                    } else {
+                        // Creando
+                        editingTicket = null;
+                        ticketModalTitle.textContent = 'Crear Nuevo Ticket';
+                        ticketIsSoldInput.checked = false;
+                    }
+                    openModal(ticketModal);
+                }
+
+                async function handleTicketFormSubmit(e) {
+                    e.preventDefault();
+                    submitTicketBtn.disabled = true;
+                    
+                    let imageUrl = editingTicket ? editingTicket.refImageUrl : null;
+
+                    try {
+                        if (ticketRefImageUrlFileInput.files.length > 0) {
+                            imageUrl = await uploadFile(ticketRefImageUrlFileInput.files[0]);
+                            if (!imageUrl) {
+                                throw new Error("No se pudo subir la imagen, la operación fue cancelada.");
+                            }
+                        }
+
+                        const formData = new FormData(ticketForm);
+                        const body = {
+                            number: parseInt(formData.get('number')),
+                            ticketHolderID: formData.get('ticketHolderID'),
+                            ticketHolderName: formData.get('ticketHolderName'),
+                            ticketHolderPhone: formData.get('ticketHolderPhone'),
+                            ticketHolderEmail: formData.get('ticketHolderEmail'),
+                            referenceCode: formData.get('referenceCode'),
+                            isSold: formData.get('isSold') === 'on',
+                            refImageUrl: imageUrl,
+                        };
+                        
+                        if (!body.refImageUrl) { 
+                            delete body.refImageUrl;
+                        }
+
+                        const method = editingTicket ? 'PATCH' : 'POST';
+                        const url = editingTicket
+                            ? `${API_BASE_URL}/rifas/tickets/${editingTicket.id}`
+                            : `${API_BASE_URL}/rifas/${managingRaffle.id}/tickets`;
+
+                        const response = await fetch(url, {
+                            method: method,
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(body)
+                        });
+
+                        if (!response.ok) {
+                            const errorMsg = await parseErrorResponse(response, 'Error al guardar el ticket.');
+                            throw new Error(errorMsg);
+                        }
+
+                        showMessage(editingTicket ? 'Ticket actualizado.' : 'Ticket creado.');
+                        closeModal(ticketModal);
+                        fetchTickets(managingRaffle.id);
+
+                    } catch (error) {
+                        console.error('Error submitting ticket:', error);
+                        showMessage(error.message, true);
+                    } finally {
+                        submitTicketBtn.disabled = false;
+                    }
+                }
+
+                async function handleMarkAsSold(ticketId) {
+                    try {
+                        const response = await fetch(`${API_BASE_URL}/rifas/tickets/${ticketId}/sell`, {
+                            method: 'PATCH'
+                        });
+                        
+                        if (!response.ok) {
+                            const errorMsg = await parseErrorResponse(response, 'Error al marcar como vendido.');
+                            throw new Error(errorMsg);
+                        }
+                        
+                        showMessage('Ticket marcado como vendido.');
+                        fetchTickets(managingRaffle.id); 
+
+                    } catch (error) {
+                        console.error('Error marking as sold:', error);
+                        showMessage(error.message, true);
+                    }
+                }
+
+D
+                function openDeleteModal(type, id) {
+                    deletingItem = { type, id };
+                    if (type === 'raffle') {
+                        const raffle = currentRaffles.find(r => r.id === id);
+                        deleteMessage.textContent = `¿Estás seguro de eliminar la rifa "${raffle.title}"? Esta acción no se puede deshacer.`;
+                    } else {
+                        const ticket = currentTickets.find(t => t.id === id);
+                        deleteMessage.textContent = `¿Estás seguro de eliminar el ticket Nro. ${ticket.number}? Esta acción no se puede deshacer.`;
+                    }
+                    openModal(deleteConfirmModal);
+                }
+
+                async function handleDeleteConfirm() {
+                    confirmDeleteBtn.disabled = true;
+                    const { type, id } = deletingItem;
+                    
+                    const url = (type === 'raffle')
+                        ? `${API_BASE_URL}/rifas/${id}/delete`
+                        : `${API_BASE_URL}/rifas/tickets/${id}`;
+                    
+                    try {
+                        const response = await fetch(url, { method: 'DELETE' });
+                        
+                        if (!response.ok) {
+                            const errorMsg = await parseErrorResponse(response, 'Error al eliminar.');
+                            throw new Error(errorMsg);
+                        }
+                        
+                        showMessage('Elemento eliminado con éxito.');
+                        closeModal(deleteConfirmModal);
+                        
+                        if (type === 'raffle') {
+                            fetchRaffles();
+                        } else {
+                            fetchTickets(managingRaffle.id);
+                        }
+
+                    } catch (error) {
+                        console.error('Error deleting item:', error);
+                        showMessage(error.message, true);
+                    } finally {
+                        confirmDeleteBtn.disabled = false;
+                        deletingItem = { type: null, id: null };
+                    }
+                }
+
+
+                // --- Event Listeners (Delegación y Clics) ---
+
+                // Cargar rifas al inicio
+                fetchRaffles();
+
+                // Botón "Crear Nueva Rifa"
+                showCreateRaffleBtn.addEventListener('click', () => openRaffleModal(null));
+
+                // Botón "Crear Nuevo Ticket"
+                showCreateTicketBtn.addEventListener('click', () => openTicketModal(null));
+
+                // Botón "Volver a Rifas"
+                backToRafflesBtn.addEventListener('click', () => {
+                    showView('raffle');
+                    managingRaffle = null;
+                });
+
+                // Clics en la grid de Rifas
+                raffleAdminGrid.addEventListener('click', (e) => {
+                    const button = e.target.closest('button');
+                    if (!button) return;
+
+                    const action = button.dataset.action;
+                    const id = button.dataset.id;
+
+                    if (action === 'edit-raffle') {
+                        const raffle = currentRaffles.find(r => r.id === id);
+                        openRaffleModal(raffle);
+                    }
+                    
+                    if (action === 'delete-raffle') {
+                        openDeleteModal('raffle', id);
+                    }
+                    
+                    if (action === 'manage-tickets') {
+                        managingRaffle = currentRaffles.find(r => r.id === id);
+                        ticketViewTitle.textContent = `Gestionar Tickets: ${managingRaffle.title}`;
+                        showView('ticket');
                         fetchTickets(managingRaffle.id);
                     }
-
-                } catch (error) {
-                    console.error('Error deleting item:', error);
-                    showMessage(error.message, true);
-                } finally {
-                    confirmDeleteBtn.disabled = false;
-                    deletingItem = { type: null, id: null };
-                }
-            }
-
-
-            // --- Event Listeners (Delegación y Clics) ---
-
-            // Cargar rifas al inicio
-            fetchRaffles();
-
-            // Botón "Crear Nueva Rifa"
-            showCreateRaffleBtn.addEventListener('click', () => openRaffleModal(null));
-
-            // Botón "Crear Nuevo Ticket"
-            showCreateTicketBtn.addEventListener('click', () => openTicketModal(null));
-
-            // Botón "Volver a Rifas"
-            backToRafflesBtn.addEventListener('click', () => {
-                showView('raffle');
-                managingRaffle = null;
-            });
-
-            // Clics en la grid de Rifas
-            raffleAdminGrid.addEventListener('click', (e) => {
-                const button = e.target.closest('button');
-                if (!button) return;
-
-                const action = button.dataset.action;
-                const id = button.dataset.id;
-
-                if (action === 'edit-raffle') {
-                    const raffle = currentRaffles.find(r => r.id === id);
-                    openRaffleModal(raffle);
-                }
-                
-                // *** CORRECCIÓN ***: Handler de 'delete-raffle' AÑADIDO DE NUEVO
-                if (action === 'delete-raffle') {
-                    openDeleteModal('raffle', id);
-                }
-                
-                if (action === 'manage-tickets') {
-                    managingRaffle = currentRaffles.find(r => r.id === id);
-                    ticketViewTitle.textContent = `Gestionar Tickets: ${managingRaffle.title}`;
-                    showView('ticket');
-                    fetchTickets(managingRaffle.id);
-                }
-            });
-
-            // Clics en la lista de Tickets
-            ticketAdminList.addEventListener('click', (e) => {
-                const button = e.target.closest('button');
-                if (!button) return;
-
-                const action = button.dataset.action;
-                const id = button.dataset.id;
-
-                if (action === 'mark-sold') {
-                    handleMarkAsSold(id);
-                }
-                
-                if (action === 'edit-ticket') {
-                    const ticket = currentTickets.find(t => t.id === id);
-                    openTicketModal(ticket);
-                }
-                
-                if (action === 'delete-ticket') {
-                    openDeleteModal('ticket', id);
-                }
-            });
-
-            // Envíos de Formularios
-            raffleForm.addEventListener('submit', handleRaffleFormSubmit);
-            ticketForm.addEventListener('submit', handleTicketFormSubmit);
-
-            // Confirmar Eliminación
-            confirmDeleteBtn.addEventListener('click', handleDeleteConfirm);
-
-            // Cerrar Modales
-            document.querySelectorAll('[data-action="close-modal"]').forEach(btn => {
-                btn.addEventListener('click', (e) => {
-                    closeModal(e.target.closest('.fixed'));
                 });
-            });
 
-        });
+                // Clics en la lista de Tickets
+                ticketAdminList.addEventListener('click', (e) => {
+                    const button = e.target.closest('button');
+                    if (!button) return;
+
+                    const action = button.dataset.action;
+                    const id = button.dataset.id;
+
+                    if (action === 'mark-sold') {
+                        handleMarkAsSold(id);
+                    }
+                    
+                    if (action === 'edit-ticket') {
+                        const ticket = currentTickets.find(t => t.id === id);
+                        openTicketModal(ticket);
+                    }
+                    
+                    if (action === 'delete-ticket') {
+                        openDeleteModal('ticket', id);
+                    }
+                });
+
+                // Envíos de Formularios
+                raffleForm.addEventListener('submit', handleRaffleFormSubmit);
+                ticketForm.addEventListener('submit', handleTicketFormSubmit);
+
+                // Confirmar Eliminación
+                confirmDeleteBtn.addEventListener('click', handleDeleteConfirm);
+
+                // Cerrar Modales
+                document.querySelectorAll('[data-action="close-modal"]').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        closeModal(e.target.closest('.fixed'));
+                    });
+                });
+            
+            } // --- *** FIN DE initializeApp() *** ---
+
+        }); // --- FIN DE DOMContentLoaded ---
     </script>
 
 </body>
